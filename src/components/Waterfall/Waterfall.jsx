@@ -15,6 +15,10 @@ export default function Waterfall({
     width = 1200,
     height = 400,
     activeNotes = new Map(),
+    loopEnabled = false,
+    loopStart = 0,
+    loopEnd = 0,
+    isWaiting = false,
 }) {
     const canvasRef = useRef(null);
     const animRef = useRef(null);
@@ -89,11 +93,17 @@ export default function Waterfall({
 
             // Choose colors based on hand/track
             const isRight = note.isRightHand !== false;
+            const isDimmed = note.dimmed === true;
             const baseColor = isRight ? COLORS.waterfall.rightHand : COLORS.waterfall.leftHand;
             const borderColor = isRight ? COLORS.waterfall.rightHandBorder : COLORS.waterfall.leftHandBorder;
 
             // Check if note is currently active
             const isActive = note.time <= currentTime && note.time + note.duration > currentTime;
+
+            // Apply dimming for inactive hand
+            if (isDimmed) {
+                ctx.globalAlpha = 0.2;
+            }
 
             // Draw note rectangle with rounded corners
             const radius = 3;
@@ -119,12 +129,15 @@ export default function Waterfall({
             ctx.stroke();
 
             // Glow effect for active notes
-            if (isActive) {
+            if (isActive && !isDimmed) {
                 ctx.shadowColor = isRight ? COLORS.accentGold : COLORS.leftHand;
                 ctx.shadowBlur = 12;
                 ctx.fill();
                 ctx.shadowBlur = 0;
             }
+
+            // Reset alpha
+            ctx.globalAlpha = 1.0;
         }
 
         // Hit line (where notes meet the piano)
@@ -146,7 +159,35 @@ export default function Waterfall({
             ctx.fillStyle = glowGrad;
             ctx.fillRect(x, height - 20, w, 20);
         });
-    }, [visibleNotes, currentTime, width, height, activeNotes, getKeyX, getKeyWidth]);
+        // Loop region indicator
+        if (loopEnabled && loopEnd > loopStart) {
+            const loopStartY = height - (loopStart - currentTime) * PIXELS_PER_SECOND;
+            const loopEndY = height - (loopEnd - currentTime) * PIXELS_PER_SECOND;
+            if (loopStartY > 0 || loopEndY < height) {
+                ctx.fillStyle = 'rgba(201, 169, 110, 0.04)';
+                ctx.fillRect(0, Math.max(0, loopEndY), width, Math.min(height, loopStartY) - Math.max(0, loopEndY));
+                // Loop boundaries
+                ctx.strokeStyle = 'rgba(201, 169, 110, 0.3)';
+                ctx.setLineDash([4, 4]);
+                ctx.lineWidth = 1;
+                [loopStartY, loopEndY].forEach(lineY => {
+                    if (lineY >= 0 && lineY <= height) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, lineY);
+                        ctx.lineTo(width, lineY);
+                        ctx.stroke();
+                    }
+                });
+                ctx.setLineDash([]);
+            }
+        }
+
+        // Waiting overlay
+        if (isWaiting) {
+            ctx.fillStyle = 'rgba(201, 169, 110, 0.03)';
+            ctx.fillRect(0, 0, width, height);
+        }
+    }, [visibleNotes, currentTime, width, height, activeNotes, loopEnabled, loopStart, loopEnd, isWaiting, getKeyX, getKeyWidth]);
 
     useEffect(() => {
         draw();

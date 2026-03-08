@@ -3,15 +3,20 @@ import Piano from './components/Piano/Piano';
 import Waterfall from './components/Waterfall/Waterfall';
 import PlaybackBar from './components/Controls/PlaybackBar';
 import MidiStatus from './components/MidiStatus/MidiStatus';
+import PracticePanel from './components/PracticePanel/PracticePanel';
+import ScoreOverlay from './components/ScoreOverlay/ScoreOverlay';
 import { useMidi } from './hooks/useMidi';
 import { useAudio } from './hooks/useAudio';
 import { useSong } from './hooks/useSong';
 import { useAnimationLoop } from './hooks/useAnimationLoop';
+import { useMetronome } from './hooks/useMetronome';
+import { ScoreEngine } from './engine/ScoreEngine';
 
 function App() {
   const midi = useMidi();
   const audio = useAudio();
   const song = useSong();
+  const metronome = useMetronome(120);
 
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [pianoWidth, setPianoWidth] = useState(1200);
@@ -20,8 +25,19 @@ function App() {
   const [songActiveNotes, setSongActiveNotes] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
+  // Phase 2: Practice state
+  const [waitMode, setWaitMode] = useState(false);
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [handMode, setHandMode] = useState('both');
+  const [loopEnabled, setLoopEnabled] = useState(false);
+  const [loopStart, setLoopStart] = useState(0);
+  const [loopEnd, setLoopEnd] = useState(0);
+  const [scoreStats, setScoreStats] = useState(null);
+  const [lastScore, setLastScore] = useState(null);
+
   const mainRef = useRef(null);
   const waterfallRef = useRef(null);
+  const scoreEngineRef = useRef(new ScoreEngine());
 
   // Initialize audio on user interaction
   const handleInitAudio = useCallback(async () => {
@@ -29,38 +45,82 @@ function App() {
     setAudioInitialized(true);
   }, [audio]);
 
-  // Connect MIDI input to audio engine
+  // Connect MIDI input to audio engine + scoring
   useEffect(() => {
     if (!audioInitialized) return;
 
     midi.setNoteCallbacks({
       onNoteOn: (midiNote, velocity) => {
         audio.noteOn(midiNote, velocity);
+
+        // Wait mode: notify scheduler
+        if (waitMode && song.scheduler) {
+          song.scheduler.userPlayedNote(midiNote);
+        }
+
+        // Scoring
+        if (song.isPlaying || isWaiting) {
+          const result = scoreEngineRef.current.scoreNote(midiNote, velocity);
+          if (result) {
+            setLastScore({ ...result, _ts: Date.now() });
+            setScoreStats(scoreEngineRef.current.getStats());
+          }
+        }
       },
       onNoteOff: (midiNote) => {
         audio.noteOff(midiNote);
       },
-      onSustain: (isOn) => {
-        // Sustain pedal handling could be enhanced here
-      },
+      onSustain: () => { },
     });
-  }, [audioInitialized, midi, audio]);
+  }, [audioInitialized, midi, audio, waitMode, song, isWaiting]);
 
-  // Connect song note-on events to audio
+  // Connect song note-on events to audio + scoring
   useEffect(() => {
     song.setNoteCallbacks({
       onNoteOn: (note) => {
         if (audioInitialized) {
           audio.noteOn(note.midi, note.velocity);
         }
-      },
-      onNoteOff: (note) => {
-        if (audioInitialized) {
-          audio.noteOff(note.midi);
+        // Register expected note for scoring
+        if (note.inActiveHand !== false) {
+          scoreEngineRef.current.addExpectedNote(note);
         }
       },
+      onNoteOff: () => { },
     });
   }, [audioInitialized, song, audio]);
+
+  // Sync practice settings with scheduler
+  useEffect(() => {
+    if (!song.scheduler) return;
+    song.scheduler.setWaitMode(waitMode);
+  }, [waitMode, song.scheduler]);
+
+  useEffect(() => {
+    if (!song.scheduler) return;
+    song.scheduler.setHandMode(handMode);
+  }, [handMode, song.scheduler]);
+
+  useEffect(() => {
+    if (!song.scheduler) return;
+    song.scheduler.setLoop(loopEnabled, loopStart, loopEnd);
+  }, [loopEnabled, loopStart, loopEnd, song.scheduler]);
+
+  // Set metronome BPM from song
+  useEffect(() => {
+    if (song.song) {
+      metronome.setBpm(Math.round(song.song.bpm));
+      setLoopEnd(song.song.totalDuration);
+    }
+  }, [song.song]);
+
+  // Reset score when song changes or stops
+  useEffect(() => {
+    if (!song.isPlaying) return;
+    scoreEngineRef.current.reset();
+    setScoreStats(null);
+    setLastScore(null);
+  }, [song.song]);
 
   // Resize handling
   useEffect(() => {
@@ -86,14 +146,18 @@ function App() {
     };
   }, [audioInitialized]);
 
-  // Animation loop – updates scheduler and redraws
+  // Animation loop
   useAnimationLoop((timestamp) => {
     const result = song.update(timestamp);
     setVisibleNotes(result.visibleNotes);
     setSongActiveNotes(result.activeNotes);
+    setIsWaiting(result.isWaiting);
+
+    // Check for missed notes
+    scoreEngineRef.current.checkTimeouts(3000);
   }, audioInitialized);
 
-  // Drag & drop MIDI files
+  // Drag & drop
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
     setIsDragging(true);
@@ -126,6 +190,15 @@ function App() {
         case 'Escape':
           song.stop();
           break;
+        case 'KeyW':
+          setWaitMode(prev => !prev);
+          break;
+        case 'KeyM':
+          metronome.toggle();
+          break;
+        case 'KeyL':
+          setLoopEnabled(prev => !prev);
+          break;
         default:
           break;
       }
@@ -133,7 +206,21 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [song, metronome]);
+
+  // Loop change handler
+  const handleLoopChange = useCallback((enabled) => {
+    setLoopEnabled(enabled);
+    if (enabled && song.song) {
+      setLoopStart(Math.max(0, song.currentTime - 2));
+      setLoopEnd(Math.min(song.song.totalDuration, song.currentTime + 10));
+    }
   }, [song]);
+
+  const handleLoopPointsChange = useCallback((start, end) => {
+    setLoopStart(start);
+    setLoopEnd(end);
+  }, []);
 
   // Audio init overlay
   if (!audioInitialized) {
@@ -214,19 +301,54 @@ function App() {
           {/* Waterfall area */}
           <div className="waterfall-area" ref={waterfallRef}>
             {song.song ? (
-              <Waterfall
-                visibleNotes={visibleNotes}
-                currentTime={song.currentTime}
-                width={pianoWidth}
-                height={waterfallHeight}
-                activeNotes={midi.activeNotes}
-              />
+              <>
+                <Waterfall
+                  visibleNotes={visibleNotes}
+                  currentTime={song.currentTime}
+                  width={pianoWidth}
+                  height={waterfallHeight}
+                  activeNotes={midi.activeNotes}
+                  loopEnabled={loopEnabled}
+                  loopStart={loopStart}
+                  loopEnd={loopEnd}
+                  isWaiting={isWaiting}
+                />
+                <ScoreOverlay lastScore={lastScore} />
+              </>
             ) : (
               <div className="empty-state">
                 <div className="empty-state-icon">♪</div>
                 <div className="empty-state-text">Load a MIDI file to begin</div>
                 <div className="empty-state-hint">Drag & drop a .mid file or click Open below</div>
               </div>
+            )}
+
+            {/* Practice Panel (overlaid on waterfall) */}
+            {song.song && (
+              <PracticePanel
+                song={song.song}
+                waitMode={waitMode}
+                onWaitModeChange={setWaitMode}
+                isWaiting={isWaiting}
+                handMode={handMode}
+                onHandModeChange={setHandMode}
+                speed={song.speed}
+                onSpeedChange={song.setSpeed}
+                loopEnabled={loopEnabled}
+                loopStart={loopStart}
+                loopEnd={loopEnd}
+                onLoopChange={handleLoopChange}
+                onLoopPointsChange={handleLoopPointsChange}
+                currentTime={song.currentTime}
+                totalDuration={song.song.totalDuration}
+                metronomeEnabled={metronome.enabled}
+                metronomeBpm={metronome.bpm}
+                metronomeCurrentBeat={metronome.currentBeat}
+                metronomeBeatsPerMeasure={metronome.beatsPerMeasure}
+                onMetronomeToggle={metronome.toggle}
+                onMetronomeBpmChange={metronome.setBpm}
+                scoreStats={scoreStats}
+              />
             )}
           </div>
 
