@@ -2,10 +2,89 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="PianoApp - Learn to play your favorite songs with your MIDI piano. Visual guides, falling notes, and real-time feedback." />
-    <title>PianoApp – Learn Piano Your Way</title>
+
+    <!-- ===================== PRIMARY SEO ===================== -->
+    <title>PianoApp – Learn Piano with Falling Notes & MIDI</title>
+    <meta name="title" content="PianoApp – Learn Piano with Falling Notes & MIDI" />
+    <meta name="description" content="Practice piano with any MIDI file. Connect your MIDI keyboard, watch falling notes, get real-time scoring, separate hands, loop sections, and track your progress — all for free in your browser." />
+    <meta name="keywords" content="piano learning app, learn piano online, MIDI piano practice, falling notes piano, piano waterfall app, piano learning game, MIDI keyboard practice, piano notes trainer, learn to play piano, piano tutor online, MIDI file player, piano sight reading, piano hand separation, piano accuracy, piano progress tracker, free piano app, browser piano, virtual piano keyboard, piano sheet music player, piano beginner app" />
+    <meta name="author" content="PianoApp" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="color-scheme" content="dark" />
+    <link rel="canonical" href="https://pianoapp-space.vercel.app/" />
+
+    <!-- ===================== OPEN GRAPH (Facebook / LinkedIn / WhatsApp) ===================== -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pianoapp-space.vercel.app/" />
+    <meta property="og:site_name" content="PianoApp" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="PianoApp – Learn Piano with Falling Notes & MIDI" />
+    <meta property="og:description" content="Connect your MIDI keyboard and practice any song with a real-time waterfall display. Instant scoring, hand separation, speed control, and progress tracking — free in your browser." />
+    <meta property="og:image" content="https://pianoapp-space.vercel.app/banner.jpg" />
+    <meta property="og:image:secure_url" content="https://pianoapp-space.vercel.app/banner.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PianoApp – falling notes waterfall display with piano keyboard and real-time scoring" />
+
+    <!-- ===================== TWITTER / X CARD ===================== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://pianoapp-space.vercel.app/" />
+    <meta name="twitter:title" content="PianoApp – Learn Piano with Falling Notes & MIDI" />
+    <meta name="twitter:description" content="Connect your MIDI keyboard and practice any song with a real-time waterfall display. Instant scoring, hand separation, speed control, and progress tracking — free in your browser." />
+    <meta name="twitter:image" content="https://pianoapp-space.vercel.app/banner.jpg" />
+    <meta name="twitter:image:alt" content="PianoApp – falling notes waterfall display with piano keyboard and real-time scoring" />
+
+    <!-- ===================== PWA / MOBILE APP ===================== -->
+    <meta name="application-name" content="PianoApp" />
+    <meta name="apple-mobile-web-app-title" content="PianoApp" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#1a1a2e" />
+
+    <!-- ===================== ICONS ===================== -->
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+
+    <!-- ===================== STRUCTURED DATA (Schema.org) ===================== -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "PianoApp",
+      "url": "https://pianoapp-space.vercel.app",
+      "description": "A free browser-based piano learning app. Load MIDI files, connect a MIDI keyboard, and practice with a real-time falling notes display, instant scoring, hand separation, speed control, and progress tracking.",
+      "applicationCategory": "MusicApplication",
+      "applicationSubCategory": "Music Education",
+      "operatingSystem": "Chrome, Edge",
+      "browserRequirements": "Requires Chrome or Edge with WebMIDI support",
+      "inLanguage": "en",
+      "isAccessibleForFree": true,
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "MIDI keyboard support via WebMIDI API",
+        "Falling notes waterfall display",
+        "Real-time scoring with pitch, timing and velocity accuracy",
+        "Hand separation practice (left, right, both)",
+        "Adjustable playback speed (0.25x – 2.0x)",
+        "Section loop mode for focused practice",
+        "Wait mode that pauses until the correct note is played",
+        "Built-in metronome with BPM control",
+        "Personal song library with MIDI file import",
+        "Progress dashboard with session history",
+        "Performance recording and playback",
+        "Cloud sync via Supabase (optional)"
+      ],
+      "screenshot": "https://pianoapp-space.vercel.app/banner.jpg"
+    }
+    </script>
   </head>
   <body>
     <div id="root"></div>
