@@ -17,6 +17,7 @@ import { ScoreEngine } from './engine/ScoreEngine';
 import { RecordingEngine } from './engine/RecordingEngine';
 import { saveSong, updateSongMeta, saveSession, saveRecording } from './engine/Storage';
 import { loadMidiFromFile } from './engine/MidiParser';
+import { supabase, getUser } from './engine/SupabaseClient';
 
 function App() {
   const midi = useMidi();
@@ -24,7 +25,10 @@ function App() {
   const song = useSong();
   const metronome = useMetronome(120);
 
-  const [audioInitialized, setAudioInitialized] = useState(false);
+  const [audioInitialized, setAudioInitialized] = useState(
+    () => !!sessionStorage.getItem('audioInitialized')
+  );
+  const [user, setUser] = useState(null);
   const [pianoWidth, setPianoWidth] = useState(1200);
   const [waterfallHeight, setWaterfallHeight] = useState(400);
   const [visibleNotes, setVisibleNotes] = useState([]);
@@ -54,11 +58,29 @@ function App() {
   const scoreEngineRef = useRef(new ScoreEngine());
   const recordingRef = useRef(new RecordingEngine());
 
+  // Auth state
+  useEffect(() => {
+    getUser().then(setUser);
+    const { data: { subscription } } = supabase?.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    }) ?? { data: { subscription: null } };
+    return () => subscription?.unsubscribe();
+  }, []);
+
   // Initialize audio
   const handleInitAudio = useCallback(async () => {
     await audio.initAudio();
+    sessionStorage.setItem('audioInitialized', '1');
     setAudioInitialized(true);
   }, [audio]);
+
+  // Auto-resume audio after HMR or OAuth redirect (sampler lost but sessionStorage still set)
+  useEffect(() => {
+    if (!audioInitialized || audio.loaded || audio.loading) return;
+    const resume = () => audio.initAudio();
+    window.addEventListener('pointerdown', resume, { once: true });
+    return () => window.removeEventListener('pointerdown', resume);
+  }, [audioInitialized, audio.loaded, audio.loading]);
 
   // MIDI → audio + scoring + recording
   useEffect(() => {
@@ -106,7 +128,7 @@ function App() {
           scoreEngineRef.current.addExpectedNote(note);
         }
       },
-      onNoteOff: () => { },
+      onNoteOff: (note) => { if (audioInitialized) audio.noteOff(note.midi); },
     });
   }, [audioInitialized, song, audio]);
 
@@ -130,6 +152,11 @@ function App() {
       setLoopEnd(song.song.totalDuration);
     }
   }, [song.song]);
+
+  // Release all voices when playback stops
+  useEffect(() => {
+    if (!song.isPlaying && audioInitialized) audio.allNotesOff();
+  }, [song.isPlaying]);
 
   // Session tracking — start timer when play begins
   useEffect(() => {
@@ -341,14 +368,34 @@ function App() {
           >
             <div className={`rec-dot ${isRecording ? 'active' : ''}`} />
           </button>
-          <button className="nav-btn" onClick={() => setShowSettings(true)} title="Settings">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001.08 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1.08z" />
-            </svg>
-          </button>
+          {user ? (
+            <button className="nav-btn avatar-btn" onClick={() => setShowSettings(true)} title={`Account: ${user.email}`}>
+              <span className="header-avatar">{user.email?.[0]?.toUpperCase() || '?'}</span>
+            </button>
+          ) : (
+            <button className="nav-btn" onClick={() => setShowSettings(true)} title="Settings">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001.08 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1.08z" />
+              </svg>
+            </button>
+          )}
 
           <div className="header-divider" />
+
+          {/* Audio not ready indicator (shows after HMR or OAuth redirect) */}
+          {audioInitialized && !audio.loaded && !audio.loading && (
+            <button className="audio-resume-btn" onClick={audio.initAudio} title="Click to enable audio">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polygon points="11,5 6,9 2,9 2,15 6,15 11,19" fill="currentColor" stroke="none" />
+                <line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+              <span>Tap to enable audio</span>
+            </button>
+          )}
+          {audioInitialized && audio.loading && (
+            <span className="audio-loading-badge">Loading piano...</span>
+          )}
 
           {/* Volume */}
           <div className="volume-section">
@@ -435,7 +482,7 @@ function App() {
         onSelectSong={handleSelectSong} currentSongId={currentSongId} />
       <ProgressDashboard isOpen={showProgress} onClose={() => setShowProgress(false)}
         onPlayRecording={handlePlayRecording} />
-      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} onUserChange={setUser} />
 
       {/* Drag overlay */}
       {isDragging && (

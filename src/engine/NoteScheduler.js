@@ -22,6 +22,9 @@ export class NoteScheduler {
         this.splitPoint = 60;            // MIDI note for hand split (C4)
 
         // Section loop
+        this._activeNoteIds = new Map(); // noteId → note, for firing onNoteOff
+
+        // Section loop
         this.loopEnabled = false;
         this.loopStart = 0;              // seconds
         this.loopEnd = 0;                // seconds
@@ -64,6 +67,8 @@ export class NoteScheduler {
     }
 
     stop() {
+        for (const note of this._activeNoteIds.values()) this.onNoteOff?.(note);
+        this._activeNoteIds.clear();
         this.isPlaying = false;
         this.currentTime = this.loopEnabled ? this.loopStart : 0;
         this.lastTimestamp = null;
@@ -73,9 +78,11 @@ export class NoteScheduler {
     }
 
     seek(time) {
+        for (const note of this._activeNoteIds.values()) this.onNoteOff?.(note);
+        this._activeNoteIds.clear();
         this.currentTime = Math.max(0, Math.min(time, this.song?.totalDuration || 0));
         this._triggeredNoteIds.clear();
-        this.lastTimestamp = null; // Reset timestamp to prevent huge jumps from stale timestamps
+        this.lastTimestamp = null;
         this.isWaiting = false;
         this.waitingForNotes.clear();
     }
@@ -188,6 +195,8 @@ export class NoteScheduler {
 
             // Loop check
             if (this.loopEnabled && this.currentTime >= this.loopEnd) {
+                for (const note of this._activeNoteIds.values()) this.onNoteOff?.(note);
+                this._activeNoteIds.clear();
                 this.currentTime = this.loopStart;
                 this._triggeredNoteIds.clear();
                 this.waitingForNotes.clear();
@@ -259,6 +268,16 @@ export class NoteScheduler {
         if (this.waitMode && notesToWaitFor.length > 0 && !this.isWaiting) {
             this.isWaiting = true;
             notesToWaitFor.forEach(midi => this.waitingForNotes.add(midi));
+        }
+
+        // Fire onNoteOff for notes that were active last frame but aren't now
+        const currentActiveIds = new Set(activeNotes.map(n => `${n.trackIndex}-${n.midi}-${n.time}`));
+        for (const [noteId, note] of this._activeNoteIds) {
+            if (!currentActiveIds.has(noteId)) this.onNoteOff?.(note);
+        }
+        this._activeNoteIds.clear();
+        for (const note of activeNotes) {
+            this._activeNoteIds.set(`${note.trackIndex}-${note.midi}-${note.time}`, note);
         }
 
         return {

@@ -6,8 +6,10 @@ import './SettingsPanel.css';
 /**
  * Settings panel with Supabase auth, cloud sync, and app preferences.
  */
-export default function SettingsPanel({ isOpen, onClose }) {
+export default function SettingsPanel({ isOpen, onClose, user: userProp, onUserChange }) {
     const [user, setUser] = useState(null);
+
+    const updateUser = (u) => { setUser(u); onUserChange?.(u); };
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
@@ -24,15 +26,19 @@ export default function SettingsPanel({ isOpen, onClose }) {
     const supabaseReady = isSupabaseConfigured();
 
     useEffect(() => {
+        if (userProp !== undefined) setUser(userProp);
+    }, [userProp]);
+
+    useEffect(() => {
         if (isOpen) {
-            loadUser();
+            if (userProp === undefined) loadUser();
             loadSettings();
         }
     }, [isOpen]);
 
     const loadUser = async () => {
         const u = await getUser();
-        setUser(u);
+        updateUser(u);
     };
 
     const loadSettings = async () => {
@@ -59,7 +65,8 @@ export default function SettingsPanel({ isOpen, onClose }) {
                 setMessage('Check your email to verify your account');
             } else {
                 await signIn(email, password);
-                await loadUser();
+                const u = await getUser();
+                updateUser(u);
                 setMessage('Signed in successfully!');
             }
         } catch (err) {
@@ -79,7 +86,7 @@ export default function SettingsPanel({ isOpen, onClose }) {
 
     const handleSignOut = async () => {
         await signOut();
-        setUser(null);
+        updateUser(null);
         setMessage('Signed out');
     };
 

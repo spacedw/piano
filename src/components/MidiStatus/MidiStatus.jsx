@@ -14,12 +14,33 @@ export default function MidiStatus({
 }) {
     const isConnected = !!selectedInput;
 
+    // MIDI not supported (mobile / Firefox / Safari)
+    if (!enabled && error) {
+        return (
+            <div className="midi-status">
+                <div className="midi-unavailable">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="6" width="20" height="12" rx="2" />
+                        <path d="M6 6v12M10 6v8M14 6v12M18 6v8" />
+                    </svg>
+                    <span>No MIDI</span>
+                    <svg className="midi-info-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="16" x2="12" y2="12" />
+                        <line x1="12" y1="8" x2="12.01" y2="8" />
+                    </svg>
+                    <span className="midi-tooltip">Requires Chrome or Edge on desktop</span>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="midi-status">
             <div className={`status-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
                 <div className="status-dot" />
                 <span className="status-text">
-                    {error ? 'MIDI Error' : isConnected ? selectedInput.name : enabled ? 'No Device' : 'MIDI Disabled'}
+                    {isConnected ? selectedInput.name : enabled ? 'No Device' : 'MIDI Disabled'}
                 </span>
             </div>
 
@@ -40,12 +61,6 @@ export default function MidiStatus({
             {sustainPedal && (
                 <div className="pedal-indicator">
                     <span>SUSTAIN</span>
-                </div>
-            )}
-
-            {error && (
-                <div className="midi-error">
-                    <span>{error}</span>
                 </div>
             )}
         </div>

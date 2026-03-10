@@ -15,36 +15,37 @@ export function useMetronome(bpm = 120, timeSignature = [4, 4]) {
     const loopRef = useRef(null);
     const beatRef = useRef(0);
 
-    // Create click sounds
+    // Cleanup on unmount
     useEffect(() => {
-        // High click (accent)
-        const synthHigh = new Tone.MembraneSynth({
-            pitchDecay: 0.008,
-            octaves: 2,
-            envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 },
-            volume: -8,
-        }).toDestination();
-
-        // Low click
-        const synthLow = new Tone.MembraneSynth({
-            pitchDecay: 0.008,
-            octaves: 2,
-            envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 },
-            volume: -12,
-        }).toDestination();
-
-        clickHighRef.current = synthHigh;
-        clickLowRef.current = synthLow;
-
         return () => {
-            synthHigh.dispose();
-            synthLow.dispose();
+            clickHighRef.current?.dispose();
+            clickLowRef.current?.dispose();
+            if (loopRef.current) {
+                loopRef.current.stop();
+                loopRef.current.dispose();
+            }
         };
     }, []);
 
     // Start/stop metronome loop
     useEffect(() => {
         if (enabled) {
+            // Lazy-init synths on first use (requires AudioContext to be started first)
+            if (!clickHighRef.current) {
+                clickHighRef.current = new Tone.MembraneSynth({
+                    pitchDecay: 0.008, octaves: 2,
+                    envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.05 },
+                    volume: -8,
+                }).toDestination();
+            }
+            if (!clickLowRef.current) {
+                clickLowRef.current = new Tone.MembraneSynth({
+                    pitchDecay: 0.008, octaves: 2,
+                    envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 },
+                    volume: -12,
+                }).toDestination();
+            }
+
             Tone.getTransport().bpm.value = activeBpm;
             beatRef.current = 0;
 

@@ -92,11 +92,52 @@
     text-transform: uppercase;
 }
 
-.midi-error {
-    padding: 4px 10px;
-    background: rgba(248, 113, 113, 0.1);
-    border: 1px solid rgba(248, 113, 113, 0.2);
-    border-radius: 6px;
+.midi-unavailable {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
     font-size: 11px;
-    color: #F87171;
+    color: #8A8A8F;
+    cursor: default;
+    user-select: none;
+}
+
+.midi-info-icon {
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.midi-tooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #1A1A1E;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #C0C0C5;
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 6px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.midi-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    right: 16px;
+    border: 5px solid transparent;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.midi-unavailable:hover .midi-tooltip {
+    display: block;
 }
