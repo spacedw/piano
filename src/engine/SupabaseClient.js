@@ -132,3 +132,203 @@ export async function fetchCloudProgress() {
  * CREATE POLICY "Users can manage own progress"
  *   ON progress FOR ALL USING (auth.uid() = user_id);
  */
+
+/**
+ * Phase 2: Community & Supporter helpers
+ */
+
+export async function getUserProfile() {
+    if (!supabase) return null;
+    const user = await getUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+    if (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+    }
+    return data;
+}
+
+export async function updateProfile(updates) {
+    if (!supabase) return null;
+    const user = await getUser();
+    if (!user) return null;
+    const { data, error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+    if (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+    }
+    return data;
+}
+
+export async function uploadMidi(buffer, path) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.storage
+        .from('user-midi')
+        .upload(path, buffer, {
+            contentType: 'audio/midi',
+            upsert: false
+        });
+    if (error) throw error;
+    return data;
+}
+
+export async function deleteMidi(path) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const { data, error } = await supabase.storage
+        .from('user-midi')
+        .remove([path]);
+    if (error) throw error;
+    return data;
+}
+
+export async function getCommunityFeed(filters = {}) {
+    if (!supabase) return [];
+    let query = supabase
+        .from('community_songs')
+        .select(`
+            *,
+            profiles!inner(tier)
+        `); 
+
+    if (filters.genre) query = query.eq('genre', filters.genre);
+    if (filters.difficulty) query = query.eq('difficulty', filters.difficulty);
+    if (filters.search) query = query.ilike('title', `%${filters.search}%`);
+    
+    if (filters.sortBy === 'popular') {
+        query = query.order('rating_avg', { ascending: false }).order('save_count', { ascending: false });
+    } else {
+        query = query.order('created_at', { ascending: false });
+    }
+
+    const { data, error } = await query.limit(50);
+    if (error) {
+        console.error('Error fetching community feed:', error);
+        return [];
+    }
+    return data;
+}
+
+export async function getCommunityById(id) {
+    if (!supabase) return null;
+    const { data, error } = await supabase
+        .from('community_songs')
+        .select(`
+            *,
+            profiles!inner(tier)
+        `)
+        .eq('id', id)
+        .single();
+    if (error) {
+        console.error('Error fetching community song:', error);
+        return null;
+    }
+    return data;
+}
+
+export async function submitCommunityUpload(metadata, buffer, fileHash) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const user = await getUser();
+    if (!user) throw new Error('Not logged in');
+
+    // 1. Hash deduplication check
+    const { data: existing } = await supabase
+        .from('community_songs')
+        .select('id')
+        .eq('file_hash', fileHash)
+        .maybeSingle();
+
+    if (existing) {
+        throw new Error('This MIDI already exists in the community library.');
+    }
+
+    // 2. Upload to storage
+    // Clean string to avoid illegal chars in path
+    const titleClean = metadata.title.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const path = `${user.id}/${Date.now()}_${titleClean}.mid`;
+    await uploadMidi(buffer, path);
+
+    // 3. Insert into community_songs
+    const { data, error } = await supabase
+        .from('community_songs')
+        .insert({
+            uploader_id: user.id,
+            title: metadata.title,
+            composer: metadata.composer || 'Unknown',
+            genre: metadata.genre,
+            difficulty: metadata.difficulty,
+            storage_path: path,
+            file_hash: fileHash,
+            rating_avg: 0,
+            save_count: 0,
+            play_count: 0
+        })
+        .select()
+        .single();
+        
+    if (error) {
+        await deleteMidi(path); // Rollback
+        throw error;
+    }
+    return data;
+}
+
+export async function rateSong(songId, rating) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const user = await getUser();
+    if (!user) throw new Error('Not logged in');
+
+    const { error } = await supabase
+        .from('community_ratings')
+        .upsert({ song_id: songId, user_id: user.id, rating }, { onConflict: 'song_id,user_id' });
+        
+    if (error) throw error;
+    return true; 
+}
+
+export async function reportSong(songId, reason) {
+    if (!supabase) throw new Error('Supabase not configured');
+    const user = await getUser();
+    if (!user) throw new Error('Not logged in');
+
+    const { error } = await supabase
+        .from('community_reports')
+        .insert({ song_id: songId, reporter_id: user.id, reason });
+        
+    if (error) throw error;
+    return true;
+}
+
+export async function saveCommunityToLibrary(songId) {
+    if (!supabase) throw new Error('Supabase not configured');
+
+    const song = await getCommunityById(songId);
+    if (!song) throw new Error('Song not found');
+
+    // Increment save_count on community_songs via an RPC
+    // Fallback: We just try to increment using RPC, if fails it still proceeds to download
+    try {
+        await supabase.rpc('increment_save_count', { song_row_id: songId });
+    } catch (e) {
+        console.warn('Could not increment save count (might need RPC setup)', e);
+    }
+
+    const { data: fileData, error: downloadError } = await supabase.storage
+        .from('user-midi')
+        .download(song.storage_path);
+        
+    if (downloadError) throw downloadError;
+    const buffer = await fileData.arrayBuffer();
+
+    return { song, buffer };
+}
+

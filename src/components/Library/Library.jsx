@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAllSongs, saveSong, deleteSong, updateSongMeta } from '../../engine/Storage';
+import { getCommunityFeed, saveCommunityToLibrary, rateSong, reportSong } from '../../engine/SupabaseClient';
+import { useUserTier } from '../../hooks/useUserTier';
+import CommunityUploadModal from '../CommunityUploadModal';
 import './Library.css';
+import './Library-tabs.css';
 
 /**
  * Song library view with grid/list modes, search, filters, and favorites.
@@ -21,6 +25,16 @@ export default function Library({
     const [editingId, setEditingId] = useState(null);
     const [editForm, setEditForm] = useState({ name: '', artist: '' });
 
+    // Community State
+    const [activeTab, setActiveTab] = useState('personal'); // 'personal' | 'community'
+    const [communitySongs, setCommunitySongs] = useState([]);
+    const [communityFilters, setCommunityFilters] = useState({ search: '', sortBy: 'popular' });
+    const [loadingCommunity, setLoadingCommunity] = useState(false);
+    const [uploadingSong, setUploadingSong] = useState(null);
+    
+    // Quotas / Tier (Phase 3 & 4 integration)
+    const { isSupporter, tier } = useUserTier();
+
     const loadSongs = useCallback(async () => {
         setLoading(true);
         const allSongs = await getAllSongs();
@@ -29,8 +43,19 @@ export default function Library({
     }, []);
 
     useEffect(() => {
-        if (isOpen) loadSongs();
-    }, [isOpen, loadSongs]);
+        if (isOpen && activeTab === 'personal') loadSongs();
+    }, [isOpen, activeTab, loadSongs]);
+
+    const loadCommunity = useCallback(async () => {
+        setLoadingCommunity(true);
+        const results = await getCommunityFeed(communityFilters);
+        setCommunitySongs(results);
+        setLoadingCommunity(false);
+    }, [communityFilters]);
+
+    useEffect(() => {
+        if (isOpen && activeTab === 'community') loadCommunity();
+    }, [isOpen, activeTab, loadCommunity]);
 
     // Import MIDI file to library
     const handleImport = useCallback(async () => {
@@ -132,6 +157,22 @@ export default function Library({
                     </div>
                 </div>
 
+                {/* Tabs */}
+                <div className="library-tabs">
+                    <button 
+                        className={`tab-btn ${activeTab === 'personal' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('personal')}
+                    >
+                        My Library
+                    </button>
+                    <button 
+                        className={`tab-btn ${activeTab === 'community' ? 'active' : ''}`}
+                        onClick={() => setActiveTab('community')}
+                    >
+                        Community
+                    </button>
+                </div>
+
                 {/* Toolbar */}
                 <div className="library-toolbar">
                     <div className="search-box">
@@ -141,9 +182,15 @@ export default function Library({
                         </svg>
                         <input
                             type="text"
-                            placeholder="Search songs..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
+                            placeholder={activeTab === 'personal' ? "Search your songs..." : "Search community..."}
+                            value={activeTab === 'personal' ? search : communityFilters.search}
+                            onChange={(e) => {
+                                if (activeTab === 'personal') {
+                                    setSearch(e.target.value);
+                                } else {
+                                    setCommunityFilters(prev => ({ ...prev, search: e.target.value }));
+                                }
+                            }}
                         />
                     </div>
 
@@ -176,146 +223,264 @@ export default function Library({
 
                 {/* Hint */}
                 <div className="library-hint">
-                    💡 Hover over a song and click ✎ to edit metadata
+                    {activeTab === 'personal' 
+                        ? '💡 Hover over a song and click ✎ to edit metadata' 
+                        : '🌐 Discover and share MIDIs with the community. Supporters get unlimited uploads!'}
                 </div>
 
                 {/* Songs */}
                 <div className={`library-content ${viewMode}`}>
-                    {loading ? (
-                        <div className="library-empty">Loading...</div>
-                    ) : filteredSongs.length === 0 ? (
-                        <div className="library-empty">
-                            <span className="empty-icon">🎵</span>
-                            <span>No songs yet</span>
-                            <span className="empty-hint">Import MIDI files to build your library</span>
-                        </div>
-                    ) : (
-                        filteredSongs.map(song => (
-                            <div
-                                key={song.id}
-                                className={`song-card ${currentSongId === song.id ? 'active' : ''}`}
-                                onClick={() => {
-                                    if (editingId !== song.id) {
-                                        onSelectSong(song);
-                                    }
-                                }}
-                            >
-                                <div className="song-card-top">
-                                    <div className="song-info">
-                                        {editingId === song.id ? (
-                                            <>
-                                                <input
-                                                    className="editable-input song-name"
-                                                    value={editForm.name}
-                                                    placeholder="Song Title"
-                                                    onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
-                                                    onClick={e => e.stopPropagation()}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Enter') handleSaveEdit(song.id);
-                                                        if (e.key === 'Escape') setEditingId(null);
+                    {activeTab === 'personal' ? (
+                        loading ? (
+                            <div className="library-empty">Loading...</div>
+                        ) : filteredSongs.length === 0 ? (
+                            <div className="library-empty">
+                                <span className="empty-icon">🎵</span>
+                                <span>No songs yet</span>
+                                <span className="empty-hint">Import MIDI files to build your library</span>
+                            </div>
+                        ) : (
+                            filteredSongs.map(song => (
+                                <div
+                                    key={song.id}
+                                    className={`song-card ${currentSongId === song.id ? 'active' : ''}`}
+                                    onClick={() => {
+                                        if (editingId !== song.id) {
+                                            onSelectSong(song);
+                                        }
+                                    }}
+                                >
+                                    <div className="song-card-top">
+                                        <div className="song-info">
+                                            {editingId === song.id ? (
+                                                <>
+                                                    <input
+                                                        className="editable-input song-name"
+                                                        value={editForm.name}
+                                                        placeholder="Song Title"
+                                                        onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                                                        onClick={e => e.stopPropagation()}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') handleSaveEdit(song.id);
+                                                            if (e.key === 'Escape') setEditingId(null);
+                                                        }}
+                                                        autoFocus
+                                                    />
+                                                    <input
+                                                        className="editable-input song-artist"
+                                                        value={editForm.artist}
+                                                        placeholder="Artist"
+                                                        onChange={e => setEditForm(prev => ({ ...prev, artist: e.target.value }))}
+                                                        onClick={e => e.stopPropagation()}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') handleSaveEdit(song.id);
+                                                            if (e.key === 'Escape') setEditingId(null);
+                                                        }}
+                                                    />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="song-name" title={song.name}>{song.name || 'Untitled'}</span>
+                                                    <span className="song-artist" title={song.artist}>
+                                                        {song.artist || 'Unknown'}
+                                                        {song.source === 'community' && <span className="source-badge">🌐</span>}
+                                                    </span>
+                                                </>
+                                            )}
+                                        </div>
+                                        <div className="song-actions-top">
+                                            {editingId === song.id ? (
+                                                <button
+                                                    className="edit-action-btn save"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleSaveEdit(song.id);
                                                     }}
-                                                    autoFocus
-                                                />
-                                                <input
-                                                    className="editable-input song-artist"
-                                                    value={editForm.artist}
-                                                    placeholder="Artist"
-                                                    onChange={e => setEditForm(prev => ({ ...prev, artist: e.target.value }))}
-                                                    onClick={e => e.stopPropagation()}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Enter') handleSaveEdit(song.id);
-                                                        if (e.key === 'Escape') setEditingId(null);
+                                                    title="Save"
+                                                >
+                                                    ✓
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    className="edit-action-btn edit"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingId(song.id);
+                                                        setEditForm({ name: song.name || '', artist: song.artist || '' });
                                                     }}
-                                                />
-                                            </>
-                                        ) : (
-                                            <>
-                                                <span className="song-name" title={song.name}>{song.name || 'Untitled'}</span>
-                                                <span className="song-artist" title={song.artist}>{song.artist || 'Unknown'}</span>
-                                            </>
-                                        )}
+                                                    title="Edit Metadata"
+                                                >
+                                                    ✎
+                                                </button>
+                                            )}
+                                            <button
+                                                className={`fav-btn ${song.favorite ? 'active' : ''}`}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleToggleFavorite(song.id, song.favorite);
+                                                }}
+                                            >
+                                                {song.favorite ? '★' : '☆'}
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="song-actions-top">
-                                        {editingId === song.id ? (
-                                            <button
-                                                className="edit-action-btn save"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    handleSaveEdit(song.id);
-                                                }}
-                                                title="Save"
-                                            >
-                                                ✓
-                                            </button>
-                                        ) : (
-                                            <button
-                                                className="edit-action-btn edit"
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setEditingId(song.id);
-                                                    setEditForm({ name: song.name || '', artist: song.artist || '' });
-                                                }}
-                                                title="Edit Metadata"
-                                            >
-                                                ✎
-                                            </button>
-                                        )}
-                                        <button
-                                            className={`fav-btn ${song.favorite ? 'active' : ''}`}
+
+                                    <div className="song-meta">
+                                        <span>{formatDuration(song.totalDuration)}</span>
+                                        <span>{Math.round(song.bpm)} BPM</span>
+                                        <span>{song.noteCount} notes</span>
+                                    </div>
+
+                                    <div className="song-card-bottom">
+                                        <div
+                                            className="song-difficulty"
                                             onClick={(e) => {
                                                 e.stopPropagation();
-                                                handleToggleFavorite(song.id, song.favorite);
+                                                const next = ((song.difficulty || 0) % 5) + 1;
+                                                handleSetDifficulty(song.id, next);
                                             }}
                                         >
-                                            {song.favorite ? '★' : '☆'}
+                                            {difficultyStars(song.difficulty)}
+                                        </div>
+                                        {song.bestScore > 0 && (
+                                            <span className="song-score">Best: {song.bestScore}%</span>
+                                        )}
+                                        <button
+                                            className="cloud-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setUploadingSong(song);
+                                            }}
+                                            title="Submit to Community"
+                                        >
+                                            ☁️
+                                        </button>
+                                        <button
+                                            className="delete-btn"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDelete(song.id);
+                                            }}
+                                            title="Remove from library"
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                <path d="M3 6.52381C3 6.12932 3.32671 5.80952 3.72973 5.80952H8.51787C8.52437 4.9683 8.61554 3.81504 9.45037 3.01668C10.1074 2.38839 11.0081 2 12 2C12.9919 2 13.8926 2.38839 14.5496 3.01668C15.3844 3.81504 15.4756 4.9683 15.4821 5.80952H20.2703C20.6733 5.80952 21 6.12932 21 6.52381C21 6.9183 20.6733 7.2381 20.2703 7.2381H3.72973C3.32671 7.2381 3 6.9183 3 6.52381Z" fill="currentColor" />
+                                                <path fillRule="evenodd" clipRule="evenodd" d="M11.5956 22H12.4044C15.1871 22 16.5785 22 17.4831 21.1141C18.3878 20.2281 18.4803 18.7749 18.6654 15.8685L18.9321 11.6806C19.0326 10.1036 19.0828 9.31511 18.6289 8.81545C18.1751 8.31579 17.4087 8.31579 15.876 8.31579H8.12404C6.59127 8.31579 5.82488 8.31579 5.37105 8.81545C4.91722 9.31511 4.96744 10.1036 5.06788 11.6806L5.33459 15.8685C5.5197 18.7749 5.61225 20.2281 6.51689 21.1141C7.42153 22 8.81289 22 11.5956 22ZM10.2463 12.1885C10.2051 11.7546 9.83753 11.4381 9.42537 11.4815C9.01321 11.5249 8.71251 11.9117 8.75372 12.3456L9.25372 17.6087C9.29494 18.0426 9.66247 18.3591 10.0746 18.3157C10.4868 18.2724 10.7875 17.8855 10.7463 17.4516L10.2463 12.1885ZM14.5746 11.4815C14.9868 11.5249 15.2875 11.9117 15.2463 12.3456L14.7463 17.6087C14.7051 18.0426 14.3375 18.3591 13.9254 18.3157C13.5132 18.2724 13.2125 17.8855 13.2537 17.4516L13.7537 12.1885C13.7949 11.7546 14.1625 11.4381 14.5746 11.4815Z" fill="currentColor" />
+                                            </svg>
                                         </button>
                                     </div>
                                 </div>
-
-                                <div className="song-meta">
-                                    <span>{formatDuration(song.totalDuration)}</span>
-                                    <span>{Math.round(song.bpm)} BPM</span>
-                                    <span>{song.noteCount} notes</span>
-                                </div>
-
-                                <div className="song-card-bottom">
-                                    <div
-                                        className="song-difficulty"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const next = ((song.difficulty || 0) % 5) + 1;
-                                            handleSetDifficulty(song.id, next);
-                                        }}
-                                    >
-                                        {difficultyStars(song.difficulty)}
-                                    </div>
-                                    {song.bestScore > 0 && (
-                                        <span className="song-score">Best: {song.bestScore}%</span>
-                                    )}
-                                    <button
-                                        className="delete-btn"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDelete(song.id);
-                                        }}
-                                        title="Remove from library"
-                                    >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M3 6.52381C3 6.12932 3.32671 5.80952 3.72973 5.80952H8.51787C8.52437 4.9683 8.61554 3.81504 9.45037 3.01668C10.1074 2.38839 11.0081 2 12 2C12.9919 2 13.8926 2.38839 14.5496 3.01668C15.3844 3.81504 15.4756 4.9683 15.4821 5.80952H20.2703C20.6733 5.80952 21 6.12932 21 6.52381C21 6.9183 20.6733 7.2381 20.2703 7.2381H3.72973C3.32671 7.2381 3 6.9183 3 6.52381Z" fill="currentColor" />
-                                            <path fill-rule="evenodd" clip-rule="evenodd" d="M11.5956 22H12.4044C15.1871 22 16.5785 22 17.4831 21.1141C18.3878 20.2281 18.4803 18.7749 18.6654 15.8685L18.9321 11.6806C19.0326 10.1036 19.0828 9.31511 18.6289 8.81545C18.1751 8.31579 17.4087 8.31579 15.876 8.31579H8.12404C6.59127 8.31579 5.82488 8.31579 5.37105 8.81545C4.91722 9.31511 4.96744 10.1036 5.06788 11.6806L5.33459 15.8685C5.5197 18.7749 5.61225 20.2281 6.51689 21.1141C7.42153 22 8.81289 22 11.5956 22ZM10.2463 12.1885C10.2051 11.7546 9.83753 11.4381 9.42537 11.4815C9.01321 11.5249 8.71251 11.9117 8.75372 12.3456L9.25372 17.6087C9.29494 18.0426 9.66247 18.3591 10.0746 18.3157C10.4868 18.2724 10.7875 17.8855 10.7463 17.4516L10.2463 12.1885ZM14.5746 11.4815C14.9868 11.5249 15.2875 11.9117 15.2463 12.3456L14.7463 17.6087C14.7051 18.0426 14.3375 18.3591 13.9254 18.3157C13.5132 18.2724 13.2125 17.8855 13.2537 17.4516L13.7537 12.1885C13.7949 11.7546 14.1625 11.4381 14.5746 11.4815Z" fill="currentColor" />
-                                        </svg>
-                                    </button>
-                                </div>
+                            ))
+                        )
+                    ) : (
+                        /* Community Tab */
+                        loadingCommunity ? (
+                            <div className="library-empty">Loading community...</div>
+                        ) : communitySongs.length === 0 ? (
+                            <div className="library-empty">
+                                <span className="empty-icon">🌐</span>
+                                <span>No community songs found</span>
                             </div>
-                        ))
+                        ) : (
+                            communitySongs.map(song => (
+                                <div key={song.id} className="song-card community-card">
+                                    <div className="song-card-top">
+                                        <div className="song-info">
+                                            <span className="song-name" title={song.title}>{song.title}</span>
+                                            <span className="song-artist" title={song.composer}>
+                                                {song.composer}
+                                                {song.profiles?.tier === 'supporter' && <span className="supporter-badge">♥</span>}
+                                            </span>
+                                        </div>
+                                        <div className="song-actions-top">
+                                            <button 
+                                                className="rate-btn" 
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    try {
+                                                        await rateSong(song.id, 5); // Simplification, need actual rating UI
+                                                        alert('Thanks for rating!');
+                                                    } catch (err) { alert(err.message); }
+                                                }}
+                                                title="Rate 5 Stars"
+                                            >
+                                                ★ {(song.rating_avg || 0).toFixed(1)}
+                                            </button>
+                                            <button 
+                                                className="cloud-btn save" 
+                                                onClick={async (e) => {
+                                                    e.stopPropagation();
+                                                    try {
+                                                        const { buffer } = await saveCommunityToLibrary(song.id);
+                                                        const { Midi } = await import('@tonejs/midi');
+                                                        const midi = new Midi(buffer);
+                                                        await saveSong({
+                                                            name: song.title,
+                                                            artist: song.composer,
+                                                            genre: song.genre,
+                                                            difficulty: song.difficulty,
+                                                            bpm: Math.round(midi.header.tempos?.[0]?.bpm || 120),
+                                                            totalDuration: midi.duration,
+                                                            noteCount: midi.tracks.reduce((sum, t) => sum + t.notes.length, 0),
+                                                            trackCount: midi.tracks.filter(t => t.notes.length > 0).length,
+                                                            midiData: buffer,
+                                                            source: 'community',
+                                                            communityId: song.id,
+                                                        });
+                                                        alert('Saved to your Library!');
+                                                        loadSongs();
+                                                    } catch (err) { alert(err.message); }
+                                                }}
+                                                title="Save to Library"
+                                            >
+                                                ↓ {song.save_count || 0}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="song-meta">
+                                        <span>{song.genre || 'Various'}</span>
+                                        <span>Level: {song.difficulty || 0}</span>
+                                    </div>
+
+                                    <div className="song-card-bottom">
+                                        <span className="song-score">▶ {song.play_count || 0} plays</span>
+                                        <button 
+                                            className="report-btn" 
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                const reason = prompt("Reason for reporting?");
+                                                if(reason) reportSong(song.id, reason);
+                                            }}
+                                            title="Report Flag"
+                                        >
+                                            ⚑
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )
                     )}
                 </div>
 
                 {/* Footer */}
                 <div className="library-footer">
-                    <span>{filteredSongs.length} songs</span>
+                    <span>{activeTab === 'personal' ? filteredSongs.length : communitySongs.length} songs</span>
                 </div>
             </div>
+
+            {uploadingSong && (
+                <CommunityUploadModal
+                    song={uploadingSong}
+                    onClose={() => setUploadingSong(null)}
+                    onSuccess={() => {
+                        setUploadingSong(null);
+                        setActiveTab('community'); // Switch to community to see the new upload!
+                        loadCommunity();
+                    }}
+                />
+            )}
+
         </div>
     );
 }

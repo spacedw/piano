@@ -141,6 +141,9 @@ export async function saveSong(songData) {
         bestScore: songData.bestScore || 0,
         favorite: songData.favorite || false,
         tags: songData.tags || [],
+        source: songData.source || 'local',
+        communityId: songData.communityId || null,
+        fileSizeBytes: songData.fileSizeBytes || (songData.midiData ? songData.midiData.byteLength : 0)
     };
     await put(STORES.SONGS, song);
     return song;

@@ -17,9 +17,11 @@ import { ScoreEngine } from './engine/ScoreEngine';
 import { RecordingEngine } from './engine/RecordingEngine';
 import { saveSong, updateSongMeta, saveSession, saveRecording } from './engine/Storage';
 import { loadMidiFromFile } from './engine/MidiParser';
-import { supabase, getUser } from './engine/SupabaseClient';
+import { supabase, getUser, syncProgress } from './engine/SupabaseClient';
+import { useUserTier } from './hooks/useUserTier';
 
 function App() {
+  const { isSupporter } = useUserTier();
   const midi = useMidi();
   const audio = useAudio();
   const song = useSong();
@@ -174,7 +176,7 @@ function App() {
       const duration = (Date.now() - sessionStartTime) / 1000;
       if (duration > 5) { // don't save sessions shorter than 5s
         const stats = scoreEngineRef.current.getStats();
-        saveSession({
+        const sessionData = {
           songId: currentSongId,
           songName: song.song?.name || 'Unknown',
           duration,
@@ -185,7 +187,14 @@ function App() {
           maxStreak: stats.maxStreak,
           speed: song.speed,
           handMode,
+        };
+
+        saveSession(sessionData).then(saved => {
+          if (isSupporter) {
+            syncProgress([saved]).catch(e => console.error('Cloud sync failed:', e));
+          }
         });
+        
         // Update best score on song
         if (stats.totalScore > 0) {
           updateSongMeta(currentSongId, {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { isSupabaseConfigured, signIn, signUp, signInWithGoogle, signOut, getUser } from '../../engine/SupabaseClient';
 import { getSetting, saveSetting } from '../../engine/Storage';
+import { useUserTier } from '../../hooks/useUserTier';
+import UpgradeModal from '../UpgradeModal';
 import './SettingsPanel.css';
 
 /**
@@ -20,10 +22,13 @@ export default function SettingsPanel({ isOpen, onClose, user: userProp, onUserC
         waterfallSpeed: 150,
         showBeatLines: true,
         autoPlayAudio: true,
+        autoPlayAudio: true,
         timingTolerance: 200,
     });
+    const [showUpgrade, setShowUpgrade] = useState(false);
 
     const supabaseReady = isSupabaseConfigured();
+    const { tier, isSupporter, uploadsThisMonth, cloudUsedBytes, cloudMaxBytes, refreshProfile } = useUserTier();
 
     useEffect(() => {
         if (userProp !== undefined) setUser(userProp);
@@ -33,6 +38,7 @@ export default function SettingsPanel({ isOpen, onClose, user: userProp, onUserC
         if (isOpen) {
             if (userProp === undefined) loadUser();
             loadSettings();
+            refreshProfile();
         }
     }, [isOpen]);
 
@@ -106,15 +112,44 @@ export default function SettingsPanel({ isOpen, onClose, user: userProp, onUserC
                         <h3>Account</h3>
                         {supabaseReady ? (
                             user ? (
-                                <div className="account-info">
-                                    <div className="user-badge">
-                                        <div className="user-avatar">{user.email?.[0]?.toUpperCase() || '?'}</div>
-                                        <div>
-                                            <span className="user-email">{user.email}</span>
-                                            <span className="user-status">Cloud sync enabled</span>
+                                <div className="account-info-container">
+                                    <div className="account-info">
+                                        <div className="user-badge">
+                                            <div className="user-avatar">{user.email?.[0]?.toUpperCase() || '?'}</div>
+                                            <div>
+                                                <span className="user-email">{user.email}</span>
+                                                <span className={`user-tier ${isSupporter ? 'supporter' : 'free'}`}>
+                                                    {isSupporter ? 'SUPPORTER ♥' : 'FREE TIER'}
+                                                </span>
+                                            </div>
                                         </div>
+                                        <button className="settings-btn" onClick={handleSignOut}>Sign Out</button>
                                     </div>
-                                    <button className="settings-btn" onClick={handleSignOut}>Sign Out</button>
+
+                                    <div className="tier-stats">
+                                        {isSupporter ? (
+                                            <div className="cloud-usage">
+                                                <div className="cloud-usage-text">
+                                                    <span>Cloud Storage</span>
+                                                    <span>{(cloudUsedBytes / 1024 / 1024).toFixed(1)} MB / {(cloudMaxBytes / 1024 / 1024).toFixed(0)} MB</span>
+                                                </div>
+                                                <div className="progress-bar">
+                                                    <div className="progress-fill" style={{ width: `${Math.min(100, (cloudUsedBytes / Math.max(1, cloudMaxBytes)) * 100)}%` }} />
+                                                </div>
+                                                <button className="settings-btn" style={{marginTop: '10px'}} onClick={() => window.open('https://lemonsqueezy.com/customer-portal', '_blank')}>Manage Subscription</button>
+                                            </div>
+                                        ) : (
+                                            <div className="free-usage">
+                                                <div className="free-usage-text">
+                                                    <span>Community Uploads</span>
+                                                    <span>{uploadsThisMonth} / 3 this month</span>
+                                                </div>
+                                                <button className="settings-btn primary upgrade-btn" style={{marginTop: '10px', display: 'flex', width: '100%', justifyContent: 'center'}} onClick={() => setShowUpgrade(true)}>
+                                                    Become a Supporter ♥
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <form className="auth-form" onSubmit={handleAuth}>
@@ -221,6 +256,10 @@ export default function SettingsPanel({ isOpen, onClose, user: userProp, onUserC
                     </div>
                 </div>
             </div>
+            
+            {showUpgrade && (
+                <UpgradeModal onClose={() => setShowUpgrade(false)} />
+            )}
         </div>
     );
 }
