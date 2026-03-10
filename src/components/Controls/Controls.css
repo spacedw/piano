@@ -109,7 +109,6 @@
     height: 3px;
     background: linear-gradient(90deg, #C9A96E, #E8D5A8);
     border-radius: 2px;
-    transition: width 0.05s linear;
 }
 
 .progress-thumb {
@@ -119,7 +118,6 @@
     background: #E8D5A8;
     border-radius: 50%;
     transform: translateX(-50%);
-    transition: left 0.05s linear;
     box-shadow: 0 0 8px rgba(201, 169, 110, 0.4);
     opacity: 0;
     transition: opacity 0.2s ease;

@@ -46,9 +46,16 @@ export class NoteScheduler {
 
     play() {
         if (!this.song) return;
+        
+        // Restart from beginning if we are at the end
+        if (this.currentTime >= this.song.totalDuration) {
+            this.currentTime = 0;
+            this._triggeredNoteIds.clear();
+        }
+        
         this.isPlaying = true;
         this.isWaiting = false;
-        this.lastTimestamp = performance.now();
+        this.lastTimestamp = null; // Let the next update() set the proper rAF timestamp
     }
 
     pause() {
@@ -68,7 +75,7 @@ export class NoteScheduler {
     seek(time) {
         this.currentTime = Math.max(0, Math.min(time, this.song?.totalDuration || 0));
         this._triggeredNoteIds.clear();
-        this.lastTimestamp = this.isPlaying ? performance.now() : null;
+        this.lastTimestamp = null; // Reset timestamp to prevent huge jumps from stale timestamps
         this.isWaiting = false;
         this.waitingForNotes.clear();
     }
@@ -175,7 +182,9 @@ export class NoteScheduler {
         // Advance time if playing and not waiting
         else if (this.isPlaying && this.lastTimestamp) {
             const delta = (timestamp - this.lastTimestamp) / 1000;
-            this.currentTime += delta * this.speed;
+            // Clamp delta to prevent huge jumps (e.g. background tabs)
+            const safeDelta = Math.min(Math.max(0, delta), 0.5); 
+            this.currentTime += safeDelta * this.speed;
 
             // Loop check
             if (this.loopEnabled && this.currentTime >= this.loopEnd) {

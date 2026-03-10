@@ -208,7 +208,7 @@ export default function SettingsPanel({ isOpen, onClose }) {
                         <h3>About</h3>
                         <div className="about-info">
                             <span className="about-name">PianoApp</span>
-                            <span className="about-version">v1.0.0</span>
+                            <span className="about-version">v{__APP_VERSION__}</span>
                             <span className="about-desc">Learn piano your way. Made with ❤️</span>
                         </div>
                     </div>
