@@ -31,10 +31,15 @@ export function useUserTier() {
                 // If it's a new month compared to lastReset
                 if (!lastReset || lastReset.getMonth() !== now.getMonth() || lastReset.getFullYear() !== now.getFullYear()) {
                     // Reset uploads_this_month to 0
-                    p = await updateProfile({
-                        uploads_this_month: 0,
-                        last_upload_reset: now.toISOString()
-                    });
+                    try {
+                        const updated = await updateProfile({
+                            uploads_this_month: 0,
+                            last_upload_reset: now.toISOString()
+                        });
+                        if (updated) p = updated;
+                    } catch (e) {
+                        // Columns may not exist yet — continue with current profile
+                    }
                 }
                 if (mounted) setProfile(p);
             }

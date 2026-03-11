@@ -164,8 +164,7 @@ export async function updateProfile(updates) {
         .select()
         .single();
     if (error) {
-        console.error('Error updating profile:', error);
-        throw error;
+        return null;
     }
     return data;
 }
@@ -197,8 +196,8 @@ export async function getCommunityFeed(filters = {}) {
         .from('community_songs')
         .select(`
             *,
-            profiles!inner(tier)
-        `); 
+            profiles(tier)
+        `);
 
     if (filters.genre) query = query.eq('genre', filters.genre);
     if (filters.difficulty) query = query.eq('difficulty', filters.difficulty);
@@ -207,7 +206,8 @@ export async function getCommunityFeed(filters = {}) {
     if (filters.sortBy === 'popular') {
         query = query.order('rating_avg', { ascending: false }).order('save_count', { ascending: false });
     } else {
-        query = query.order('created_at', { ascending: false });
+        // Order by id descending (most recently inserted first)
+        query = query.order('id', { ascending: false });
     }
 
     const { data, error } = await query.limit(50);
@@ -224,7 +224,7 @@ export async function getCommunityById(id) {
         .from('community_songs')
         .select(`
             *,
-            profiles!inner(tier)
+            profiles(tier)
         `)
         .eq('id', id)
         .single();
@@ -279,6 +279,19 @@ export async function submitCommunityUpload(metadata, buffer, fileHash) {
         await deleteMidi(path); // Rollback
         throw error;
     }
+
+    // Increment the monthly upload counter for free-tier tracking
+    try {
+        const profile = await getUserProfile();
+        if (profile) {
+            await updateProfile({
+                uploads_this_month: (profile.uploads_this_month || 0) + 1,
+            });
+        }
+    } catch (_) {
+        // Non-fatal — quota tracking best-effort
+    }
+
     return data;
 }
 
@@ -314,12 +327,14 @@ export async function saveCommunityToLibrary(songId) {
     const song = await getCommunityById(songId);
     if (!song) throw new Error('Song not found');
 
-    // Increment save_count on community_songs via an RPC
-    // Fallback: We just try to increment using RPC, if fails it still proceeds to download
+    // Increment save_count directly
     try {
-        await supabase.rpc('increment_save_count', { song_row_id: songId });
+        await supabase
+            .from('community_songs')
+            .update({ save_count: (song.save_count || 0) + 1 })
+            .eq('id', songId);
     } catch (e) {
-        console.warn('Could not increment save count (might need RPC setup)', e);
+        // Non-fatal — proceed with download
     }
 
     const { data: fileData, error: downloadError } = await supabase.storage

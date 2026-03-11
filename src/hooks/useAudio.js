@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import * as Tone from 'tone';
 
 // Salamander Grand Piano samples via unpkg CDN (free, high quality)
 const SAMPLE_BASE_URL = 'https://tonejs.github.io/audio/salamander/';
@@ -16,6 +15,16 @@ const SAMPLE_MAP = {
     A7: 'A7.mp3', C8: 'C8.mp3',
 };
 
+// Lazy-loaded Tone.js module reference
+let Tone = null;
+
+async function getTone() {
+    if (!Tone) {
+        Tone = await import('tone');
+    }
+    return Tone;
+}
+
 /**
  * Hook for managing the audio engine using Tone.js with Salamander Grand Piano samples.
  */
@@ -26,6 +35,7 @@ export function useAudio() {
     const [muted, setMuted] = useState(false);
     const samplerRef = useRef(null);
     const volumeNodeRef = useRef(null);
+    const toneRef = useRef(null);
 
     // Initialize the sampler
     const initAudio = useCallback(async () => {
@@ -34,12 +44,14 @@ export function useAudio() {
         setLoading(true);
 
         try {
-            await Tone.start();
+            const T = await getTone();
+            toneRef.current = T;
+            await T.start();
 
-            const vol = new Tone.Volume(Tone.gainToDb(volume)).toDestination();
+            const vol = new T.Volume(T.gainToDb(volume)).toDestination();
             volumeNodeRef.current = vol;
 
-            const sampler = new Tone.Sampler({
+            const sampler = new T.Sampler({
                 urls: SAMPLE_MAP,
                 baseUrl: SAMPLE_BASE_URL,
                 release: 1.5,
@@ -62,10 +74,11 @@ export function useAudio() {
 
     // Play a note
     const noteOn = useCallback((midiNote, velocity = 0.8) => {
-        if (!samplerRef.current || !loaded) return;
-        const noteName = Tone.Frequency(midiNote, 'midi').toNote();
+        const T = toneRef.current;
+        if (!samplerRef.current || !loaded || !T) return;
+        const noteName = T.Frequency(midiNote, 'midi').toNote();
         try {
-            samplerRef.current.triggerAttack(noteName, Tone.now(), velocity);
+            samplerRef.current.triggerAttack(noteName, T.now(), velocity);
         } catch (e) {
             // Ignore individual note errors
         }
@@ -73,10 +86,11 @@ export function useAudio() {
 
     // Release a note
     const noteOff = useCallback((midiNote) => {
-        if (!samplerRef.current || !loaded) return;
-        const noteName = Tone.Frequency(midiNote, 'midi').toNote();
+        const T = toneRef.current;
+        if (!samplerRef.current || !loaded || !T) return;
+        const noteName = T.Frequency(midiNote, 'midi').toNote();
         try {
-            samplerRef.current.triggerRelease(noteName, Tone.now());
+            samplerRef.current.triggerRelease(noteName, T.now());
         } catch (e) {
             // Ignore
         }
@@ -90,19 +104,21 @@ export function useAudio() {
 
     // Volume control
     const setVolume = useCallback((v) => {
+        const T = toneRef.current;
         const clamped = Math.max(0, Math.min(1, v));
         setVolumeState(clamped);
-        if (volumeNodeRef.current) {
-            volumeNodeRef.current.volume.value = clamped === 0 ? -Infinity : Tone.gainToDb(clamped);
+        if (volumeNodeRef.current && T) {
+            volumeNodeRef.current.volume.value = clamped === 0 ? -Infinity : T.gainToDb(clamped);
         }
     }, []);
 
     // Mute toggle
     const toggleMute = useCallback(() => {
         setMuted(prev => {
+            const T = toneRef.current;
             const next = !prev;
-            if (volumeNodeRef.current) {
-                volumeNodeRef.current.volume.value = next ? -Infinity : Tone.gainToDb(volume);
+            if (volumeNodeRef.current && T) {
+                volumeNodeRef.current.volume.value = next ? -Infinity : T.gainToDb(volume);
             }
             return next;
         });

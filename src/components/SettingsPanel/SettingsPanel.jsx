@@ -22,7 +22,6 @@ export default function SettingsPanel({ isOpen, onClose, user: userProp, onUserC
         waterfallSpeed: 150,
         showBeatLines: true,
         autoPlayAudio: true,
-        autoPlayAudio: true,
         timingTolerance: 200,
     });
     const [showUpgrade, setShowUpgrade] = useState(false);
@@ -160,11 +159,13 @@ export default function SettingsPanel({ isOpen, onClose, user: userProp, onUserC
                                     <input
                                         type="email" placeholder="Email"
                                         value={email} onChange={(e) => setEmail(e.target.value)}
+                                        autoComplete="email"
                                         required
                                     />
                                     <input
                                         type="password" placeholder="Password" minLength="6"
                                         value={password} onChange={(e) => setPassword(e.target.value)}
+                                        autoComplete="current-password"
                                         required
                                     />
                                     <button type="submit" className="settings-btn primary" disabled={authLoading}>

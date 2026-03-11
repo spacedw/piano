@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getAllSongs, saveSong, deleteSong, updateSongMeta } from '../../engine/Storage';
-import { getCommunityFeed, saveCommunityToLibrary, rateSong, reportSong } from '../../engine/SupabaseClient';
+import { getCommunityFeed, saveCommunityToLibrary, rateSong, reportSong, getUser } from '../../engine/SupabaseClient';
 import { useUserTier } from '../../hooks/useUserTier';
 import CommunityUploadModal from '../CommunityUploadModal';
 import './Library.css';
@@ -29,11 +29,26 @@ export default function Library({
     const [activeTab, setActiveTab] = useState('personal'); // 'personal' | 'community'
     const [communitySongs, setCommunitySongs] = useState([]);
     const [communityFilters, setCommunityFilters] = useState({ search: '', sortBy: 'popular' });
+    const [communitySort, setCommunitySort] = useState('popular');
     const [loadingCommunity, setLoadingCommunity] = useState(false);
     const [uploadingSong, setUploadingSong] = useState(null);
-    
-    // Quotas / Tier (Phase 3 & 4 integration)
+    const [toast, setToast] = useState(null); // { msg, type: 'ok' | 'err' }
+    const [ratingFor, setRatingFor] = useState(null); // songId being rated
+    const [currentUser, setCurrentUser] = useState(null);
+    const [savingId, setSavingId] = useState(null); // community songId being saved
+
+    // Quotas / Tier
     const { isSupporter, tier } = useUserTier();
+
+    // Load current user
+    useEffect(() => {
+        getUser().then(setCurrentUser);
+    }, [isOpen]);
+
+    const showToast = useCallback((msg, type = 'ok') => {
+        setToast({ msg, type });
+        setTimeout(() => setToast(null), 3500);
+    }, []);
 
     const loadSongs = useCallback(async () => {
         setLoading(true);
@@ -48,10 +63,10 @@ export default function Library({
 
     const loadCommunity = useCallback(async () => {
         setLoadingCommunity(true);
-        const results = await getCommunityFeed(communityFilters);
+        const results = await getCommunityFeed({ ...communityFilters, sortBy: communitySort });
         setCommunitySongs(results);
         setLoadingCommunity(false);
-    }, [communityFilters]);
+    }, [communityFilters, communitySort]);
 
     useEffect(() => {
         if (isOpen && activeTab === 'community') loadCommunity();
@@ -107,7 +122,93 @@ export default function Library({
         loadSongs();
     }, [loadSongs]);
 
-    // Filter and sort
+    // Save a community song to local library and load it
+    const handleSaveCommunityToLibrary = useCallback(async (song) => {
+        if (!currentUser) {
+            showToast('Sign in to save songs to your library', 'err');
+            return;
+        }
+        if (savingId === song.id) return;
+        setSavingId(song.id);
+        try {
+            const { buffer } = await saveCommunityToLibrary(song.id);
+            const { Midi } = await import('@tonejs/midi');
+            const midi = new Midi(buffer);
+            await saveSong({
+                name: song.title,
+                artist: song.composer,
+                genre: song.genre,
+                difficulty: song.difficulty,
+                bpm: Math.round(midi.header.tempos?.[0]?.bpm || 120),
+                totalDuration: midi.duration,
+                noteCount: midi.tracks.reduce((sum, t) => sum + t.notes.length, 0),
+                trackCount: midi.tracks.filter(t => t.notes.length > 0).length,
+                midiData: buffer,
+                source: 'community',
+                communityId: song.id,
+            });
+            showToast(`"${song.title}" saved to your Library!`);
+            loadSongs();
+        } catch (err) {
+            showToast(err.message || 'Error saving song', 'err');
+        } finally {
+            setSavingId(null);
+        }
+    }, [currentUser, savingId, showToast, loadSongs]);
+
+    // Click on community song card → download + load into player
+    const handlePlayCommunity = useCallback(async (song) => {
+        if (ratingFor) return; // ignore click when rating picker is open
+        try {
+            // Check if we already have this community song locally
+            const existing = songs.find(s => s.communityId === song.id);
+            if (existing) {
+                onSelectSong(existing);
+                onClose();
+                return;
+            }
+
+            const { buffer } = await saveCommunityToLibrary(song.id);
+            const { Midi } = await import('@tonejs/midi');
+            const midi = new Midi(buffer);
+            const saved = await saveSong({
+                name: song.title,
+                artist: song.composer,
+                genre: song.genre,
+                difficulty: song.difficulty,
+                bpm: Math.round(midi.header.tempos?.[0]?.bpm || 120),
+                totalDuration: midi.duration,
+                noteCount: midi.tracks.reduce((sum, t) => sum + t.notes.length, 0),
+                trackCount: midi.tracks.filter(t => t.notes.length > 0).length,
+                midiData: buffer,
+                source: 'community',
+                communityId: song.id,
+            });
+            onSelectSong(saved);
+            onClose();
+        } catch (err) {
+            showToast(err.message || 'Failed to load song', 'err');
+        }
+    }, [ratingFor, songs, onSelectSong, onClose, showToast]);
+
+    // Rate a community song
+    const handleRate = useCallback(async (songId, stars) => {
+        if (!currentUser) {
+            showToast('Sign in to rate songs', 'err');
+            setRatingFor(null);
+            return;
+        }
+        try {
+            await rateSong(songId, stars);
+            showToast(`Rated ${stars} ⭐`);
+            setRatingFor(null);
+            loadCommunity();
+        } catch (err) {
+            showToast(err.message || 'Error submitting rating', 'err');
+        }
+    }, [currentUser, showToast, loadCommunity]);
+
+    // Filter and sort (personal)
     const filteredSongs = songs
         .filter(s => {
             if (search) {
@@ -159,13 +260,13 @@ export default function Library({
 
                 {/* Tabs */}
                 <div className="library-tabs">
-                    <button 
+                    <button
                         className={`tab-btn ${activeTab === 'personal' ? 'active' : ''}`}
                         onClick={() => setActiveTab('personal')}
                     >
                         My Library
                     </button>
-                    <button 
+                    <button
                         className={`tab-btn ${activeTab === 'community' ? 'active' : ''}`}
                         onClick={() => setActiveTab('community')}
                     >
@@ -195,16 +296,27 @@ export default function Library({
                     </div>
 
                     <div className="toolbar-group">
-                        <select
-                            className="sort-select"
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value)}
-                        >
-                            <option value="addedAt">Recent</option>
-                            <option value="name">Name</option>
-                            <option value="lastPlayedAt">Last Played</option>
-                            <option value="difficulty">Difficulty</option>
-                        </select>
+                        {activeTab === 'personal' ? (
+                            <select
+                                className="sort-select"
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value)}
+                            >
+                                <option value="addedAt">Recent</option>
+                                <option value="name">Name</option>
+                                <option value="lastPlayedAt">Last Played</option>
+                                <option value="difficulty">Difficulty</option>
+                            </select>
+                        ) : (
+                            <select
+                                className="sort-select"
+                                value={communitySort}
+                                onChange={(e) => setCommunitySort(e.target.value)}
+                            >
+                                <option value="popular">Popular</option>
+                                <option value="recent">Recent</option>
+                            </select>
+                        )}
 
                         <div className="view-toggle">
                             <button
@@ -223,10 +335,19 @@ export default function Library({
 
                 {/* Hint */}
                 <div className="library-hint">
-                    {activeTab === 'personal' 
-                        ? '💡 Hover over a song and click ✎ to edit metadata' 
-                        : '🌐 Discover and share MIDIs with the community. Supporters get unlimited uploads!'}
+                    {activeTab === 'personal'
+                        ? '💡 Hover over a song and click ✎ to edit metadata'
+                        : currentUser
+                            ? '🌐 Click a song to play it · ↓ to save · ⭐ to rate'
+                            : '🌐 Sign in to upload, rate, and save community songs'}
                 </div>
+
+                {/* Toast */}
+                {toast && (
+                    <div className={`library-toast ${toast.type === 'err' ? 'toast-err' : 'toast-ok'}`}>
+                        {toast.type === 'ok' ? '✓' : '✕'} {toast.msg}
+                    </div>
+                )}
 
                 {/* Songs */}
                 <div className={`library-content ${viewMode}`}>
@@ -383,7 +504,12 @@ export default function Library({
                             </div>
                         ) : (
                             communitySongs.map(song => (
-                                <div key={song.id} className="song-card community-card">
+                                <div
+                                    key={song.id}
+                                    className="song-card community-card"
+                                    style={{ cursor: 'pointer' }}
+                                    onClick={() => handlePlayCommunity(song)}
+                                >
                                     <div className="song-card-top">
                                         <div className="song-info">
                                             <span className="song-name" title={song.title}>{song.title}</span>
@@ -393,47 +519,47 @@ export default function Library({
                                             </span>
                                         </div>
                                         <div className="song-actions-top">
-                                            <button 
-                                                className="rate-btn" 
-                                                onClick={async (e) => {
+                                            {/* Star rating picker */}
+                                            {ratingFor === song.id ? (
+                                                <div className="star-picker" onClick={e => e.stopPropagation()}>
+                                                    {[1, 2, 3, 4, 5].map(n => (
+                                                        <button
+                                                            key={n}
+                                                            className="star-pick-btn"
+                                                            onClick={() => handleRate(song.id, n)}
+                                                            title={`${n} star${n > 1 ? 's' : ''}`}
+                                                        >
+                                                            ★
+                                                        </button>
+                                                    ))}
+                                                    <button
+                                                        className="star-pick-btn cancel"
+                                                        onClick={() => setRatingFor(null)}
+                                                        title="Cancel"
+                                                    >✕</button>
+                                                </div>
+                                            ) : (
+                                                <button
+                                                    className="rate-btn"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setRatingFor(song.id);
+                                                    }}
+                                                    title="Rate this song"
+                                                >
+                                                    ★ {(song.rating_avg || 0).toFixed(1)}
+                                                </button>
+                                            )}
+                                            <button
+                                                className="cloud-btn save"
+                                                disabled={savingId === song.id}
+                                                onClick={(e) => {
                                                     e.stopPropagation();
-                                                    try {
-                                                        await rateSong(song.id, 5); // Simplification, need actual rating UI
-                                                        alert('Thanks for rating!');
-                                                    } catch (err) { alert(err.message); }
-                                                }}
-                                                title="Rate 5 Stars"
-                                            >
-                                                ★ {(song.rating_avg || 0).toFixed(1)}
-                                            </button>
-                                            <button 
-                                                className="cloud-btn save" 
-                                                onClick={async (e) => {
-                                                    e.stopPropagation();
-                                                    try {
-                                                        const { buffer } = await saveCommunityToLibrary(song.id);
-                                                        const { Midi } = await import('@tonejs/midi');
-                                                        const midi = new Midi(buffer);
-                                                        await saveSong({
-                                                            name: song.title,
-                                                            artist: song.composer,
-                                                            genre: song.genre,
-                                                            difficulty: song.difficulty,
-                                                            bpm: Math.round(midi.header.tempos?.[0]?.bpm || 120),
-                                                            totalDuration: midi.duration,
-                                                            noteCount: midi.tracks.reduce((sum, t) => sum + t.notes.length, 0),
-                                                            trackCount: midi.tracks.filter(t => t.notes.length > 0).length,
-                                                            midiData: buffer,
-                                                            source: 'community',
-                                                            communityId: song.id,
-                                                        });
-                                                        alert('Saved to your Library!');
-                                                        loadSongs();
-                                                    } catch (err) { alert(err.message); }
+                                                    handleSaveCommunityToLibrary(song);
                                                 }}
                                                 title="Save to Library"
                                             >
-                                                ↓ {song.save_count || 0}
+                                                {savingId === song.id ? '…' : `↓ ${song.save_count || 0}`}
                                             </button>
                                         </div>
                                     </div>
@@ -445,12 +571,12 @@ export default function Library({
 
                                     <div className="song-card-bottom">
                                         <span className="song-score">▶ {song.play_count || 0} plays</span>
-                                        <button 
-                                            className="report-btn" 
+                                        <button
+                                            className="report-btn"
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 const reason = prompt("Reason for reporting?");
-                                                if(reason) reportSong(song.id, reason);
+                                                if (reason) reportSong(song.id, reason);
                                             }}
                                             title="Report Flag"
                                         >
@@ -475,7 +601,7 @@ export default function Library({
                     onClose={() => setUploadingSong(null)}
                     onSuccess={() => {
                         setUploadingSong(null);
-                        setActiveTab('community'); // Switch to community to see the new upload!
+                        setActiveTab('community');
                         loadCommunity();
                     }}
                 />
