@@ -1,0 +1,415 @@
+.practicePanel {
+    position: absolute;
+    right: 12px;
+    top: 12px;
+    width: 280px;
+    background: rgba(20, 20, 22, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 14px;
+    z-index: 20;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.practicePanel.collapsed {
+    width: auto;
+}
+
+.panelToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: #F5F5F5;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    gap: 8px;
+}
+
+.panelToggle:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.panelToggleLabel {
+    color: #C9A96E;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10px;
+}
+
+.panelContent {
+    padding: 0 14px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+/* Sections */
+.panelSection {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 10px 0;
+}
+
+.panelSection:first-child {
+    border-top: none;
+}
+
+.sectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #8A8A8F;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.sectionIcon {
+    font-size: 13px;
+}
+
+.sectionValue {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    color: #C9A96E;
+    font-size: 11px;
+}
+
+.sectionBody {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sectionHint {
+    font-size: 10px;
+    color: #555558;
+    line-height: 1.3;
+}
+
+/* Toggle switch */
+.toggleSwitch {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.toggleSwitch input {
+    display: none;
+}
+
+.toggleSlider {
+    width: 32px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    position: relative;
+    transition: background 0.2s ease;
+    flex-shrink: 0;
+}
+
+.toggleSlider::after {
+    content: '';
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #8A8A8F;
+    border-radius: 50%;
+    top: 2px;
+    left: 2px;
+    transition: all 0.2s ease;
+}
+
+.toggleSwitch input:checked + .toggleSlider {
+    background: rgba(201, 169, 110, 0.3);
+}
+
+.toggleSwitch input:checked + .toggleSlider::after {
+    background: #C9A96E;
+    transform: translateX(16px);
+    box-shadow: 0 0 6px rgba(201, 169, 110, 0.4);
+}
+
+.toggleLabel {
+    font-size: 11px;
+    color: #F5F5F5;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.waitingBadge {
+    padding: 2px 6px;
+    background: rgba(201, 169, 110, 0.15);
+    color: #C9A96E;
+    border-radius: 4px;
+    font-size: 9px;
+    animation: pulseText 1.5s ease-in-out infinite;
+}
+
+@keyframes pulseText {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Hand buttons */
+.handButtons {
+    display: flex;
+    gap: 4px;
+}
+
+.handBtn {
+    flex: 1;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #8A8A8F;
+    border-radius: 6px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.handBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #F5F5F5;
+}
+
+.handBtn.active {
+    background: rgba(201, 169, 110, 0.15);
+    border-color: rgba(201, 169, 110, 0.3);
+    color: #C9A96E;
+}
+
+/* Speed range */
+.speedRange {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    outline: none;
+}
+
+.speedRange::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: #C9A96E;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 6px rgba(201, 169, 110, 0.3);
+}
+
+.speedPresets {
+    display: flex;
+    gap: 4px;
+}
+
+.presetBtn {
+    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #8A8A8F;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: all 0.2s ease;
+}
+
+.presetBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #F5F5F5;
+}
+
+.presetBtn.active {
+    background: rgba(201, 169, 110, 0.15);
+    border-color: rgba(201, 169, 110, 0.3);
+    color: #C9A96E;
+}
+
+/* Loop controls */
+.loopControls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.loopInputs {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.loopField {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loopField label {
+    font-size: 10px;
+    color: #8A8A8F;
+    min-width: 32px;
+}
+
+.loopField input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    outline: none;
+}
+
+.loopField input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: #C9A96E;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.loopTime {
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #8A8A8F;
+    min-width: 28px;
+}
+
+/* Metronome */
+.metronomeRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.beatDots {
+    display: flex;
+    gap: 6px;
+}
+
+.beatDot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    transition: all 0.1s ease;
+}
+
+.beatDot.active {
+    background: #C9A96E;
+    box-shadow: 0 0 8px rgba(201, 169, 110, 0.6);
+    transform: scale(1.3);
+}
+
+.beatDot.accent {
+    border: 1px solid rgba(201, 169, 110, 0.3);
+}
+
+.bpmControl {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bpmBtn {
+    padding: 3px 8px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    color: #8A8A8F;
+    border-radius: 4px;
+    font-size: 10px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.bpmBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #F5F5F5;
+}
+
+.bpmSlider {
+    -webkit-appearance: none;
+    appearance: none;
+    flex: 1;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 2px;
+    outline: none;
+}
+
+.bpmSlider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    background: #C9A96E;
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+/* Score section */
+.scoreSection .sectionHeader {
+    margin-bottom: 10px;
+}
+
+.scoreGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+}
+
+.scoreItem {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+}
+
+.scoreLabel {
+    font-size: 9px;
+    color: #555558;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.scoreValue {
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    color: #F5F5F5;
+    font-weight: 500;
+}
+
+.scoreBar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 4px;
+}
+
+.scoreBarFill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}

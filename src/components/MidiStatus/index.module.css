@@ -1,0 +1,136 @@
+.midiStatus {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statusIndicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.statusIndicator.connected {
+    border-color: rgba(74, 222, 128, 0.2);
+}
+
+.statusIndicator.disconnected {
+    border-color: rgba(255, 255, 255, 0.06);
+}
+
+.statusDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #8A8A8F;
+    transition: all 0.3s ease;
+}
+
+.connected .statusDot {
+    background: #4ADE80;
+    box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+.statusText {
+    font-size: 11px;
+    color: #8A8A8F;
+    letter-spacing: 0.5px;
+    font-family: 'Inter', sans-serif;
+}
+
+.connected .statusText {
+    color: #F5F5F5;
+}
+
+.midiSelect {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #F5F5F5;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    outline: none;
+}
+
+.midiSelect:focus {
+    border-color: rgba(201, 169, 110, 0.3);
+}
+
+.midiSelect option {
+    background: #1A1A1E;
+}
+
+.pedalIndicator {
+    padding: 3px 10px;
+    background: rgba(201, 169, 110, 0.12);
+    border: 1px solid rgba(201, 169, 110, 0.2);
+    border-radius: 12px;
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: #C9A96E;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+}
+
+.midiUnavailable {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    font-size: 11px;
+    color: #8A8A8F;
+    cursor: default;
+    user-select: none;
+}
+
+.midiInfoIcon {
+    opacity: 0.5;
+    flex-shrink: 0;
+}
+
+.midiTooltip {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #1A1A1E;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #C0C0C5;
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 6px 10px;
+    border-radius: 6px;
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.midiTooltip::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    right: 16px;
+    border: 5px solid transparent;
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.midiUnavailable:hover .midiTooltip {
+    display: block;
+}

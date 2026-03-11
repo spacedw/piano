@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { submitCommunityUpload } from '../../engine/SupabaseClient';
-import { useUserTier } from '../../hooks/useUserTier';
-import './CommunityUploadModal.css';
+import { submitCommunityUpload } from '@/engine/SupabaseClient';
+import { useUserTier } from '@/hooks/useUserTier';
+import styles from './index.module.css';
 
 async function calculateHash(buffer) {
     const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
@@ -28,16 +28,16 @@ export default function CommunityUploadModal({ song, onClose, onSuccess }) {
 
         setIsSubmitting(true);
         setError('');
-        
+
         try {
             const hash = await calculateHash(song.midiData);
             await submitCommunityUpload({
                 title,
                 composer,
                 genre,
-                difficulty: parseInt(difficulty, 10)
+                difficulty: parseInt(difficulty, 10),
             }, song.midiData, hash);
-            
+
             onSuccess();
         } catch (err) {
             setError(err.message || 'Error uploading MIDI.');
@@ -47,37 +47,37 @@ export default function CommunityUploadModal({ song, onClose, onSuccess }) {
     };
 
     return (
-        <div className="cum-overlay" onClick={onClose}>
-            <div className="cum-panel" onClick={e => e.stopPropagation()}>
-                <div className="cum-header">
+        <div className={styles.overlay} onClick={onClose}>
+            <div className={styles.panel} onClick={e => e.stopPropagation()}>
+                <div className={styles.header}>
                     <h2>Share with Community</h2>
-                    <button className="cum-close" onClick={onClose}>✕</button>
+                    <button className={styles.closeBtn} onClick={onClose}>✕</button>
                 </div>
-                
-                <form className="cum-form" onSubmit={handleSubmit}>
-                    <div className="cum-info-banner">
-                        <span className="info-icon">☁️</span>
+
+                <form className={styles.form} onSubmit={handleSubmit}>
+                    <div className={styles.infoBanner}>
+                        <span className={styles.infoIcon}>☁️</span>
                         <div>
-                            {isSupporter 
-                                ? "Thanks for being a Supporter! You have unlimited uploads." 
+                            {isSupporter
+                                ? 'Thanks for being a Supporter! You have unlimited uploads.'
                                 : `You have ${uploadsLeft} upload${uploadsLeft !== 1 ? 's' : ''} left this month.`}
                         </div>
                     </div>
 
-                    {error && <div className="cum-error">{error}</div>}
+                    {error && <div className={styles.error}>{error}</div>}
 
-                    <div className="cum-field">
+                    <div className={styles.field}>
                         <label>Title</label>
                         <input required value={title} onChange={e => setTitle(e.target.value)} />
                     </div>
 
-                    <div className="cum-field">
+                    <div className={styles.field}>
                         <label>Composer / Artist</label>
                         <input required value={composer} onChange={e => setComposer(e.target.value)} />
                     </div>
 
-                    <div className="cum-field-row">
-                        <div className="cum-field">
+                    <div className={styles.fieldRow}>
+                        <div className={styles.field}>
                             <label>Genre</label>
                             <select value={genre} onChange={e => setGenre(e.target.value)}>
                                 <option>Classical</option>
@@ -88,7 +88,7 @@ export default function CommunityUploadModal({ song, onClose, onSuccess }) {
                                 <option>Other</option>
                             </select>
                         </div>
-                        <div className="cum-field">
+                        <div className={styles.field}>
                             <label>Difficulty</label>
                             <select value={difficulty} onChange={e => setDifficulty(e.target.value)}>
                                 <option value="1">1 - Beginner</option>
@@ -99,10 +99,10 @@ export default function CommunityUploadModal({ song, onClose, onSuccess }) {
                             </select>
                         </div>
                     </div>
-                    
-                    <button 
-                        type="submit" 
-                        className="cum-submit" 
+
+                    <button
+                        type="submit"
+                        className={styles.submitBtn}
                         disabled={isSubmitting || uploadsLeft <= 0}
                     >
                         {isSubmitting ? 'Uploading...' : 'Publish to Community'}
