@@ -11,6 +11,8 @@ export default function MidiStatus({
     selectedInput,
     onSelectInput,
     sustainPedal,
+    sostenutoPedal,
+    softPedal,
 }) {
     const isConnected = !!selectedInput;
 
@@ -58,11 +60,23 @@ export default function MidiStatus({
                 </select>
             )}
 
-            {sustainPedal && (
-                <div className={styles.pedalIndicator}>
-                    <span>SUSTAIN</span>
-                </div>
-            )}
+            <div className={styles.pedalGroup}>
+                {sustainPedal && (
+                    <div className={`${styles.pedalIndicator} ${styles.pedalSustain}`}>
+                        <span>SUS</span>
+                    </div>
+                )}
+                {sostenutoPedal && (
+                    <div className={`${styles.pedalIndicator} ${styles.pedalSostenuto}`}>
+                        <span>SOS</span>
+                    </div>
+                )}
+                {softPedal && (
+                    <div className={`${styles.pedalIndicator} ${styles.pedalSoft}`}>
+                        <span>SOFT</span>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

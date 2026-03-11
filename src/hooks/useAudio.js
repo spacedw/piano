@@ -27,6 +27,7 @@ async function getTone() {
 
 /**
  * Hook for managing the audio engine using Tone.js with Salamander Grand Piano samples.
+ * Supports sustain, sostenuto, and soft pedals.
  */
 export function useAudio() {
     const [loaded, setLoaded] = useState(false);
@@ -36,6 +37,22 @@ export function useAudio() {
     const samplerRef = useRef(null);
     const volumeNodeRef = useRef(null);
     const toneRef = useRef(null);
+
+    // Pedal state (refs to avoid stale closures in callbacks)
+    const sustainActiveRef = useRef(false);
+    const sostenutoActiveRef = useRef(false);
+    const softActiveRef = useRef(false);
+
+    // Notes currently held alive by each pedal mechanism
+    // sustainHeld: keys released while sustain was on
+    const sustainHeldRef = useRef(new Set());
+    // sostenutoHeld: keys that were pressed AT THE MOMENT sostenuto was activated
+    const sostenutoHeldRef = useRef(new Set());
+    // Notes currently physically depressed (key is down)
+    const pressedNotesRef = useRef(new Set());
+
+    // Soft pedal velocity multiplier
+    const SOFT_VELOCITY_FACTOR = 0.55;
 
     // Initialize the sampler
     const initAudio = useCallback(async () => {
@@ -77,8 +94,21 @@ export function useAudio() {
         const T = toneRef.current;
         if (!samplerRef.current || !loaded || !T) return;
         const noteName = T.Frequency(midiNote, 'midi').toNote();
+
+        // Track as physically pressed
+        pressedNotesRef.current.add(midiNote);
+
+        // If sustain was holding this note from a prior release, remove from held set
+        // (re-attack takes over)
+        sustainHeldRef.current.delete(midiNote);
+
+        // Apply soft pedal velocity reduction
+        const effectiveVelocity = softActiveRef.current
+            ? velocity * SOFT_VELOCITY_FACTOR
+            : velocity;
+
         try {
-            samplerRef.current.triggerAttack(noteName, T.now(), velocity);
+            samplerRef.current.triggerAttack(noteName, T.now(), Math.max(0.01, effectiveVelocity));
         } catch (e) {
             // Ignore individual note errors
         }
@@ -89,6 +119,26 @@ export function useAudio() {
         const T = toneRef.current;
         if (!samplerRef.current || !loaded || !T) return;
         const noteName = T.Frequency(midiNote, 'midi').toNote();
+
+        // Remove from physically pressed set
+        pressedNotesRef.current.delete(midiNote);
+
+        // Check if any pedal is holding this note
+        const heldBySustain = sustainActiveRef.current;
+        const heldBySostenuto = sostenutoHeldRef.current.has(midiNote);
+
+        if (heldBySustain) {
+            // Sustain pedal is active — defer release, remember it
+            sustainHeldRef.current.add(midiNote);
+            return;
+        }
+
+        if (heldBySostenuto) {
+            // Sostenuto is holding this note — don't release yet
+            return;
+        }
+
+        // No pedal holding — release immediately
         try {
             samplerRef.current.triggerRelease(noteName, T.now());
         } catch (e) {
@@ -100,6 +150,71 @@ export function useAudio() {
     const allNotesOff = useCallback(() => {
         if (!samplerRef.current) return;
         samplerRef.current.releaseAll();
+        sustainHeldRef.current.clear();
+        sostenutoHeldRef.current.clear();
+        pressedNotesRef.current.clear();
+    }, []);
+
+    // --- Pedal handlers ---
+
+    /**
+     * Sustain pedal (CC#64).
+     * When released: trigger release on all notes that were deferred.
+     */
+    const setSustain = useCallback((isOn) => {
+        const T = toneRef.current;
+        sustainActiveRef.current = isOn;
+
+        if (!isOn && samplerRef.current && T) {
+            // Release all notes that were being held by sustain,
+            // except those still physically pressed or held by sostenuto
+            const toRelease = [...sustainHeldRef.current].filter(
+                note => !pressedNotesRef.current.has(note) && !sostenutoHeldRef.current.has(note)
+            );
+            toRelease.forEach(midiNote => {
+                const noteName = T.Frequency(midiNote, 'midi').toNote();
+                try {
+                    samplerRef.current.triggerRelease(noteName, T.now());
+                } catch (e) { /* ignore */ }
+            });
+            sustainHeldRef.current.clear();
+        }
+    }, []);
+
+    /**
+     * Sostenuto pedal (CC#66).
+     * When pressed: capture the notes that are currently physically held down.
+     * When released: release only the captured notes (if sustain is also not active).
+     */
+    const setSostenuto = useCallback((isOn) => {
+        const T = toneRef.current;
+        sostenutoActiveRef.current = isOn;
+
+        if (isOn) {
+            // Capture currently pressed notes
+            sostenutoHeldRef.current = new Set(pressedNotesRef.current);
+        } else if (samplerRef.current && T) {
+            // Release all sostenuto-held notes that are not also physically pressed
+            // or held by sustain
+            const toRelease = [...sostenutoHeldRef.current].filter(
+                note => !pressedNotesRef.current.has(note) && !sustainHeldRef.current.has(note) && !sustainActiveRef.current
+            );
+            toRelease.forEach(midiNote => {
+                const noteName = T.Frequency(midiNote, 'midi').toNote();
+                try {
+                    samplerRef.current.triggerRelease(noteName, T.now());
+                } catch (e) { /* ignore */ }
+            });
+            sostenutoHeldRef.current.clear();
+        }
+    }, []);
+
+    /**
+     * Soft / una corda pedal (CC#67).
+     * Only affects future noteOn calls via velocity reduction.
+     */
+    const setSoft = useCallback((isOn) => {
+        softActiveRef.current = isOn;
     }, []);
 
     // Volume control
@@ -143,5 +258,8 @@ export function useAudio() {
         allNotesOff,
         setVolume,
         toggleMute,
+        setSustain,
+        setSostenuto,
+        setSoft,
     };
 }

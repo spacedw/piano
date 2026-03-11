@@ -121,7 +121,9 @@ function App() {
           recordingRef.current.recordNoteOff(midiNote);
         }
       },
-      onSustain: () => { },
+      onSustain: (isOn) => { audio.setSustain(isOn); },
+      onSostenuto: (isOn) => { audio.setSostenuto(isOn); },
+      onSoft: (isOn) => { audio.setSoft(isOn); },
     });
   }, [audioInitialized, midi, audio, waitMode, song, isWaiting, isRecording]);
 
@@ -135,6 +137,12 @@ function App() {
         }
       },
       onNoteOff: (note) => { if (audioInitialized) audio.noteOff(note.midi); },
+      onPedalEvent: (cc, isOn) => {
+        if (!audioInitialized) return;
+        if (cc === 64) audio.setSustain(isOn);
+        else if (cc === 66) audio.setSostenuto(isOn);
+        else if (cc === 67) audio.setSoft(isOn);
+      },
     });
   }, [audioInitialized, song, audio]);
 
@@ -159,9 +167,17 @@ function App() {
     }
   }, [song.song]);
 
-  // Release all voices when playback stops
+  // Release pedals and notes when playback stops
   useEffect(() => {
-    if (!song.isPlaying && audioInitialized) audio.allNotesOff();
+    if (!song.isPlaying && audioInitialized) {
+      // Release all pedals first so sustained notes begin their natural decay
+      audio.setSustain(false);
+      audio.setSostenuto(false);
+      audio.setSoft(false);
+      // Give a short grace period for notes to decay naturally, then clean up
+      const timer = setTimeout(() => audio.allNotesOff(), 2000);
+      return () => clearTimeout(timer);
+    }
   }, [song.isPlaying]);
 
   // Session tracking — start timer when play begins
@@ -436,6 +452,8 @@ function App() {
             enabled={midi.enabled} error={midi.error} inputs={midi.inputs}
             selectedInput={midi.selectedInput} onSelectInput={midi.selectInput}
             sustainPedal={midi.sustainPedal}
+            sostenutoPedal={midi.sostenutoPedal}
+            softPedal={midi.softPedal}
           />
         </div>
       </header>

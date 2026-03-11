@@ -11,10 +11,18 @@ export function useMidi() {
     const [selectedInput, setSelectedInput] = useState(null);
     const [activeNotes, setActiveNotes] = useState(new Map()); // midi -> velocity
     const [sustainPedal, setSustainPedal] = useState(false);
+    const [sostenutoPedal, setSostenutoPedal] = useState(false);
+    const [softPedal, setSoftPedal] = useState(false);
     const [error, setError] = useState(null);
 
     const listenersRef = useRef([]);
-    const noteCallbacksRef = useRef({ onNoteOn: null, onNoteOff: null, onSustain: null });
+    const noteCallbacksRef = useRef({
+        onNoteOn: null,
+        onNoteOff: null,
+        onSustain: null,
+        onSostenuto: null,
+        onSoft: null,
+    });
 
     // Enable WebMIDI
     useEffect(() => {
@@ -88,10 +96,21 @@ export function useMidi() {
         };
 
         const handleCC = (e) => {
-            if (e.controller.number === 64) {
-                const isOn = e.rawValue >= 64;
+            const ccNumber = e.controller.number;
+            const isOn = e.rawValue >= 64;
+
+            if (ccNumber === 64) {
+                // Sustain pedal
                 setSustainPedal(isOn);
                 noteCallbacksRef.current.onSustain?.(isOn);
+            } else if (ccNumber === 66) {
+                // Sostenuto pedal
+                setSostenutoPedal(isOn);
+                noteCallbacksRef.current.onSostenuto?.(isOn);
+            } else if (ccNumber === 67) {
+                // Soft / una corda pedal
+                setSoftPedal(isOn);
+                noteCallbacksRef.current.onSoft?.(isOn);
             }
         };
 
@@ -117,8 +136,8 @@ export function useMidi() {
     }, []);
 
     // Register callbacks for note events
-    const setNoteCallbacks = useCallback(({ onNoteOn, onNoteOff, onSustain }) => {
-        noteCallbacksRef.current = { onNoteOn, onNoteOff, onSustain };
+    const setNoteCallbacks = useCallback(({ onNoteOn, onNoteOff, onSustain, onSostenuto, onSoft }) => {
+        noteCallbacksRef.current = { onNoteOn, onNoteOff, onSustain, onSostenuto, onSoft };
     }, []);
 
     return {
@@ -128,6 +147,8 @@ export function useMidi() {
         selectedInput,
         activeNotes,
         sustainPedal,
+        sostenutoPedal,
+        softPedal,
         selectInput,
         setNoteCallbacks,
     };

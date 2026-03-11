@@ -117,9 +117,10 @@ export function useSong() {
     /**
      * Set note event callbacks on the scheduler
      */
-    const setNoteCallbacks = useCallback(({ onNoteOn, onNoteOff }) => {
+    const setNoteCallbacks = useCallback(({ onNoteOn, onNoteOff, onPedalEvent }) => {
         schedulerRef.current.onNoteOn = onNoteOn;
         schedulerRef.current.onNoteOff = onNoteOff;
+        schedulerRef.current.onPedalEvent = onPedalEvent || null;
     }, []);
 
     return {

@@ -73,16 +73,47 @@
     background: #1A1A1E;
 }
 
+.pedalGroup {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .pedalIndicator {
-    padding: 3px 10px;
-    background: rgba(201, 169, 110, 0.12);
-    border: 1px solid rgba(201, 169, 110, 0.2);
+    padding: 3px 8px;
     border-radius: 12px;
     font-size: 9px;
     letter-spacing: 1.5px;
-    color: #C9A96E;
     font-family: 'JetBrains Mono', monospace;
     text-transform: uppercase;
+    font-weight: 600;
+    animation: pedalPop 0.15s ease;
+}
+
+@keyframes pedalPop {
+    from { transform: scale(0.85); opacity: 0.5; }
+    to   { transform: scale(1);    opacity: 1;   }
+}
+
+/* Sustain — gold */
+.pedalSustain {
+    background: rgba(201, 169, 110, 0.15);
+    border: 1px solid rgba(201, 169, 110, 0.35);
+    color: #C9A96E;
+}
+
+/* Sostenuto — blue */
+.pedalSostenuto {
+    background: rgba(96, 165, 250, 0.12);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    color: #60A5FA;
+}
+
+/* Soft — green */
+.pedalSoft {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.25);
+    color: #4ADE80;
 }
 
 .midiUnavailable {

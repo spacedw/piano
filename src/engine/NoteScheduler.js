@@ -12,7 +12,9 @@ export class NoteScheduler {
         this.activeTracks = new Set();
         this.onNoteOn = null;
         this.onNoteOff = null;
+        this.onPedalEvent = null;  // callback(cc, isOn)
         this._triggeredNoteIds = new Set();
+        this._nextPedalIndex = 0; // index into song.pedalEvents
 
         // Phase 2: Practice features
         this.waitMode = false;           // Pause until user plays correct note
@@ -42,6 +44,7 @@ export class NoteScheduler {
         this.isPlaying = false;
         this.lastTimestamp = null;
         this._triggeredNoteIds.clear();
+        this._nextPedalIndex = 0;
         this.isWaiting = false;
         this.waitingForNotes.clear();
         this.activeTracks = new Set(song.tracks.map((_, i) => i));
@@ -73,8 +76,13 @@ export class NoteScheduler {
         this.currentTime = this.loopEnabled ? this.loopStart : 0;
         this.lastTimestamp = null;
         this._triggeredNoteIds.clear();
+        this._nextPedalIndex = 0;
         this.isWaiting = false;
         this.waitingForNotes.clear();
+        // Release all pedals on stop
+        this.onPedalEvent?.(64, false);
+        this.onPedalEvent?.(66, false);
+        this.onPedalEvent?.(67, false);
     }
 
     seek(time) {
@@ -85,6 +93,21 @@ export class NoteScheduler {
         this.lastTimestamp = null;
         this.isWaiting = false;
         this.waitingForNotes.clear();
+        // Reset pedal index to match seek position
+        this._resetPedalIndex();
+        // Release all pedals on seek
+        this.onPedalEvent?.(64, false);
+        this.onPedalEvent?.(66, false);
+        this.onPedalEvent?.(67, false);
+    }
+
+    /** Reset _nextPedalIndex to the first event at or after currentTime */
+    _resetPedalIndex() {
+        const events = this.song?.pedalEvents;
+        if (!events || events.length === 0) { this._nextPedalIndex = 0; return; }
+        let idx = 0;
+        while (idx < events.length && events[idx].time < this.currentTime) idx++;
+        this._nextPedalIndex = idx;
     }
 
     setSpeed(speed) {
@@ -200,6 +223,11 @@ export class NoteScheduler {
                 this.currentTime = this.loopStart;
                 this._triggeredNoteIds.clear();
                 this.waitingForNotes.clear();
+                this._resetPedalIndex();
+                // Release all pedals at loop boundary
+                this.onPedalEvent?.(64, false);
+                this.onPedalEvent?.(66, false);
+                this.onPedalEvent?.(67, false);
             }
             // End of song check
             else if (this.currentTime >= this.song.totalDuration) {
@@ -278,6 +306,16 @@ export class NoteScheduler {
         this._activeNoteIds.clear();
         for (const note of activeNotes) {
             this._activeNoteIds.set(`${note.trackIndex}-${note.midi}-${note.time}`, note);
+        }
+
+        // --- Fire pedal CC events that fall within this frame ---
+        if (this.isPlaying && this.song.pedalEvents) {
+            const events = this.song.pedalEvents;
+            while (this._nextPedalIndex < events.length && events[this._nextPedalIndex].time <= ct) {
+                const pe = events[this._nextPedalIndex];
+                this.onPedalEvent?.(pe.cc, pe.isOn);
+                this._nextPedalIndex++;
+            }
         }
 
         return {
