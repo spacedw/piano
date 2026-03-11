@@ -19,6 +19,7 @@ import { saveSong, updateSongMeta, saveSession, saveRecording } from '@/engine/S
 import { loadMidiFromFile } from '@/engine/MidiParser';
 import { supabase, getUser, syncProgress } from '@/engine/SupabaseClient';
 import { useUserTier } from '@/hooks/useUserTier';
+import { useWakeLock } from '@/hooks/useWakeLock';
 
 function App() {
   const { isSupporter } = useUserTier();
@@ -59,6 +60,9 @@ function App() {
   const waterfallRef = useRef(null);
   const scoreEngineRef = useRef(new ScoreEngine());
   const recordingRef = useRef(new RecordingEngine());
+
+  // Keep screen awake while user is in the app; during playback, idle timer resets automatically
+  useWakeLock(audioInitialized, song.isPlaying);
 
   // Auth state
   useEffect(() => {
