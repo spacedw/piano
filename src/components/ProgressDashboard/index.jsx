@@ -5,7 +5,7 @@ import styles from './index.module.css';
 /**
  * Progress dashboard showing practice stats, heatmap, and session history.
  */
-export default function ProgressDashboard({ isOpen, onClose, onPlayRecording }) {
+export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, onSaveToLibrary }) {
     const [stats, setStats] = useState(null);
     const [recordings, setRecordings] = useState([]);
     const [activeTab, setActiveTab] = useState('stats');
@@ -188,6 +188,11 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording }) 
                                                 onClick={() => onPlayRecording(rec)}
                                                 title="Play recording"
                                             >▶</button>
+                                            <button
+                                                className={styles.recSaveBtn}
+                                                onClick={() => onSaveToLibrary(rec)}
+                                                title="Save to Library as MIDI"
+                                            >📥</button>
                                             <button
                                                 className={styles.recDeleteBtn}
                                                 onClick={() => handleDeleteRecording(rec.id)}

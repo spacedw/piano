@@ -337,6 +337,7 @@
 }
 
 .recPlayBtn,
+.recSaveBtn,
 .recDeleteBtn {
     padding: 4px 8px;
     background: rgba(255, 255, 255, 0.04);
@@ -350,6 +351,11 @@
 .recPlayBtn:hover {
     background: rgba(201, 169, 110, 0.15);
     border-color: rgba(201, 169, 110, 0.3);
+}
+
+.recSaveBtn:hover {
+    background: rgba(96, 165, 250, 0.12);
+    border-color: rgba(96, 165, 250, 0.3);
 }
 
 .recDeleteBtn:hover {

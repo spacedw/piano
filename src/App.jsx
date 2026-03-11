@@ -121,9 +121,18 @@ function App() {
           recordingRef.current.recordNoteOff(midiNote);
         }
       },
-      onSustain: (isOn) => { audio.setSustain(isOn); },
-      onSostenuto: (isOn) => { audio.setSostenuto(isOn); },
-      onSoft: (isOn) => { audio.setSoft(isOn); },
+      onSustain: (isOn) => {
+        audio.setSustain(isOn);
+        if (isRecording) recordingRef.current.recordPedalEvent(64, isOn);
+      },
+      onSostenuto: (isOn) => {
+        audio.setSostenuto(isOn);
+        if (isRecording) recordingRef.current.recordPedalEvent(66, isOn);
+      },
+      onSoft: (isOn) => {
+        audio.setSoft(isOn);
+        if (isRecording) recordingRef.current.recordPedalEvent(67, isOn);
+      },
     });
   }, [audioInitialized, midi, audio, waitMode, song, isWaiting, isRecording]);
 
@@ -256,6 +265,11 @@ function App() {
       events.forEach(evt => {
         if (evt.type === 'noteOn') audio.noteOn(evt.midi, evt.velocity);
         else if (evt.type === 'noteOff') audio.noteOff(evt.midi);
+        else if (evt.type === 'pedal') {
+          if (evt.cc === 64) audio.setSustain(evt.isOn);
+          else if (evt.cc === 66) audio.setSostenuto(evt.isOn);
+          else if (evt.cc === 67) audio.setSoft(evt.isOn);
+        }
       });
     }
   }, audioInitialized);
@@ -295,6 +309,29 @@ function App() {
     recordingRef.current.startPlayback();
     setShowProgress(false);
   }, []);
+
+  const handleSaveRecordingToLibrary = useCallback(async (rec) => {
+    try {
+      const midiBuffer = await RecordingEngine.toMidiArrayBuffer(rec);
+      const saved = await saveSong({
+        name: rec.songName || 'My Recording',
+        bpm: 120,
+        totalDuration: rec.duration,
+        noteCount: rec.events.filter(e => e.type === 'noteOn').length,
+        trackCount: 1,
+        midiData: midiBuffer,
+        source: 'recording',
+      });
+      // Load the newly saved song
+      const blob = new Blob([midiBuffer]);
+      const file = new File([blob], (rec.songName || 'recording') + '.mid');
+      await song.loadFile(file);
+      setCurrentSongId(saved.id);
+      setShowProgress(false);
+    } catch (err) {
+      console.error('Failed to export recording:', err);
+    }
+  }, [song]);
 
   // Drag & drop
   const handleDragOver = useCallback((e) => { e.preventDefault(); setIsDragging(true); }, []);
@@ -512,7 +549,7 @@ function App() {
       <Library isOpen={showLibrary} onClose={() => setShowLibrary(false)}
         onSelectSong={handleSelectSong} currentSongId={currentSongId} />
       <ProgressDashboard isOpen={showProgress} onClose={() => setShowProgress(false)}
-        onPlayRecording={handlePlayRecording} />
+        onPlayRecording={handlePlayRecording} onSaveToLibrary={handleSaveRecordingToLibrary} />
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} onUserChange={setUser} />
 
       {/* Drag overlay */}
