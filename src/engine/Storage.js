@@ -6,6 +6,12 @@
 const DB_NAME = 'pianoapp';
 const DB_VERSION = 1;
 
+// Registered by SyncEngine to push changes to cloud in the background
+let _syncCallbacks = { onSongSaved: null, onSettingSaved: null };
+export function registerSyncCallbacks(callbacks) {
+    _syncCallbacks = { ..._syncCallbacks, ...callbacks };
+}
+
 const STORES = {
     SONGS: 'songs',
     PROGRESS: 'progress',
@@ -143,9 +149,13 @@ export async function saveSong(songData) {
         tags: songData.tags || [],
         source: songData.source || 'local',
         communityId: songData.communityId || null,
-        fileSizeBytes: songData.fileSizeBytes || (songData.midiData ? songData.midiData.byteLength : 0)
+        fileSizeBytes: songData.fileSizeBytes || (songData.midiData ? songData.midiData.byteLength : 0),
+        updatedAt: songData.updatedAt || Date.now(),
     };
     await put(STORES.SONGS, song);
+    if (_syncCallbacks.onSongSaved) {
+        _syncCallbacks.onSongSaved(song).catch(() => {});
+    }
     return song;
 }
 
@@ -164,7 +174,7 @@ export async function deleteSong(id) {
 export async function updateSongMeta(id, updates) {
     const song = await getSong(id);
     if (!song) return null;
-    const updated = { ...song, ...updates };
+    const updated = { ...song, ...updates, updatedAt: Date.now() };
     await put(STORES.SONGS, updated);
     return updated;
 }
@@ -288,8 +298,17 @@ export async function getRecordingsForSong(songId) {
 
 // =================== SETTINGS ===================
 
-export async function saveSetting(key, value) {
-    return put(STORES.SETTINGS, { key, value });
+export async function getAllSettings() {
+    return getAll(STORES.SETTINGS);
+}
+
+export async function saveSetting(key, value, updatedAt) {
+    const record = { key, value, updatedAt: updatedAt || Date.now() };
+    await put(STORES.SETTINGS, record);
+    if (_syncCallbacks.onSettingSaved) {
+        _syncCallbacks.onSettingSaved(key, value, record.updatedAt).catch(() => {});
+    }
+    return record;
 }
 
 export async function getSetting(key, defaultValue = null) {

@@ -19,10 +19,11 @@ import { saveSong, updateSongMeta, saveSession, saveRecording } from '@/engine/S
 import { loadMidiFromFile } from '@/engine/MidiParser';
 import { supabase, getUser, syncProgress } from '@/engine/SupabaseClient';
 import { useUserTier } from '@/hooks/useUserTier';
+import { initSync, syncAll } from '@/engine/SyncEngine';
 import { useWakeLock } from '@/hooks/useWakeLock';
 
 function App() {
-  const { isSupporter } = useUserTier();
+  const { isSupporter, tier } = useUserTier();
   const midi = useMidi();
   const audio = useAudio();
   const song = useSong();
@@ -72,6 +73,17 @@ function App() {
     }) ?? { data: { subscription: null } };
     return () => subscription?.unsubscribe();
   }, []);
+
+  // Cloud sync — initialise background push and run full sync on login
+  useEffect(() => {
+    const canSync = user && (tier === 'supporter' || tier === 'admin');
+    if (canSync) {
+      initSync(user);
+      syncAll().catch(e => console.error('[App] Initial sync failed:', e));
+    } else {
+      initSync(null);
+    }
+  }, [user, tier]);
 
   // Initialize audio
   const handleInitAudio = useCallback(async () => {
