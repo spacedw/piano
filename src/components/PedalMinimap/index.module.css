@@ -1,0 +1,182 @@
+.pedalMinimap {
+    position: fixed;
+    bottom: 250px;
+    right: 24px;
+    z-index: 100;
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+    padding: 10px 12px 8px;
+    border-radius: 12px;
+    background: rgba(18, 18, 24, 0.72);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    user-select: none;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.pedalMinimap::before {
+    content: 'PEDALS';
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: rgba(255, 255, 255, 0.25);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Individual pedal slot */
+.pedal {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 36px;
+}
+
+.pedalBody {
+    position: relative;
+    width: 30px;
+    height: 44px;
+    border-radius: 4px 4px 2px 2px;
+    background: rgba(40, 40, 50, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    overflow: hidden;
+    transition: transform 0.08s ease, box-shadow 0.15s ease;
+}
+
+/* Live (real-time MIDI) indicator — fills from bottom */
+.liveIndicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    background: linear-gradient(180deg, rgba(0, 200, 255, 0.5) 0%, rgba(0, 180, 240, 0.8) 100%);
+    transition: height 0.1s ease-out;
+    pointer-events: none;
+}
+
+.liveIndicator.active {
+    height: 100%;
+}
+
+/* Playback indicator — fills from bottom, different color */
+.playbackIndicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    background: linear-gradient(180deg, rgba(255, 160, 40, 0.45) 0%, rgba(255, 140, 20, 0.75) 100%);
+    transition: height 0.1s ease-out;
+    pointer-events: none;
+}
+
+.playbackIndicator.active {
+    height: 100%;
+}
+
+/* When both are active — the live indicator sits on top of playback,
+   the mix creates a nice visual */
+
+/* Pressed state — pedal visually moves down */
+.pedalBody.pressed {
+    transform: translateY(3px) scaleY(0.93);
+}
+
+/* Glow effects */
+.pedalBody.liveGlow {
+    box-shadow:
+        0 0 8px rgba(0, 200, 255, 0.4),
+        0 0 20px rgba(0, 200, 255, 0.15),
+        inset 0 0 6px rgba(0, 200, 255, 0.1);
+    border-color: rgba(0, 200, 255, 0.3);
+}
+
+.pedalBody.playbackGlow {
+    box-shadow:
+        0 0 8px rgba(255, 160, 40, 0.4),
+        0 0 20px rgba(255, 160, 40, 0.15),
+        inset 0 0 6px rgba(255, 160, 40, 0.1);
+    border-color: rgba(255, 160, 40, 0.3);
+}
+
+.pedalBody.bothGlow {
+    box-shadow:
+        0 0 8px rgba(180, 120, 255, 0.45),
+        0 0 24px rgba(180, 120, 255, 0.2),
+        inset 0 0 8px rgba(180, 120, 255, 0.12);
+    border-color: rgba(180, 120, 255, 0.35);
+}
+
+/* Label below pedal */
+.pedalLabel {
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.8px;
+    color: rgba(255, 255, 255, 0.3);
+    text-transform: uppercase;
+    transition: color 0.15s ease;
+}
+
+.pedalLabel.liveActive {
+    color: rgba(0, 200, 255, 0.85);
+}
+
+.pedalLabel.playbackActive {
+    color: rgba(255, 160, 40, 0.85);
+}
+
+.pedalLabel.bothActive {
+    color: rgba(180, 120, 255, 0.9);
+}
+
+/* Legend dots */
+.legend {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    position: absolute;
+    bottom: -14px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+}
+
+.legendItem {
+    display: flex;
+    gap: 3px;
+    align-items: center;
+}
+
+.legendDot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+}
+
+.legendDotLive {
+    background: rgba(0, 200, 255, 0.8);
+    box-shadow: 0 0 4px rgba(0, 200, 255, 0.5);
+}
+
+.legendDotPlayback {
+    background: rgba(255, 160, 40, 0.8);
+    box-shadow: 0 0 4px rgba(255, 160, 40, 0.5);
+}
+
+.legendText {
+    font-size: 6px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: rgba(255, 255, 255, 0.2);
+    text-transform: uppercase;
+}

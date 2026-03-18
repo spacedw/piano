@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getProgressStats, getAllRecordings, deleteRecording } from '@/engine/Storage';
+import { getProgressStats, getAllRecordings, deleteRecording, updateRecordingMeta } from '@/engine/Storage';
 import styles from './index.module.css';
 
 /**
@@ -10,6 +10,8 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
     const [recordings, setRecordings] = useState([]);
     const [activeTab, setActiveTab] = useState('stats');
     const [loading, setLoading] = useState(false);
+    const [editingRecId, setEditingRecId] = useState(null);
+    const [editRecName, setEditRecName] = useState('');
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -42,6 +44,15 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
     const handleDeleteRecording = async (id) => {
         await deleteRecording(id);
         loadData();
+    };
+
+    const handleSaveRecName = async (id) => {
+        const trimmed = editRecName.trim();
+        if (trimmed) {
+            await updateRecordingMeta(id, { songName: trimmed });
+            loadData();
+        }
+        setEditingRecId(null);
     };
 
     if (!isOpen) return null;
@@ -175,7 +186,28 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
                                 {recordings.map(rec => (
                                     <div key={rec.id} className={styles.recordingItem}>
                                         <div className={styles.recordingInfo}>
-                                            <span className={styles.recordingName}>{rec.songName}</span>
+                                            {editingRecId === rec.id ? (
+                                                <input
+                                                    className={styles.editRecInput}
+                                                    value={editRecName}
+                                                    onChange={e => setEditRecName(e.target.value)}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') handleSaveRecName(rec.id);
+                                                        if (e.key === 'Escape') setEditingRecId(null);
+                                                    }}
+                                                    onBlur={() => handleSaveRecName(rec.id)}
+                                                    autoFocus
+                                                />
+                                            ) : (
+                                                <span
+                                                    className={styles.recordingName}
+                                                    onClick={() => { setEditingRecId(rec.id); setEditRecName(rec.songName || ''); }}
+                                                    title="Click to rename"
+                                                >
+                                                    {rec.songName}
+                                                    <span className={styles.editHint}>✎</span>
+                                                </span>
+                                            )}
                                             <span className={styles.recordingDate}>{formatDate(rec.createdAt)}</span>
                                         </div>
                                         <div className={styles.recordingMeta}>

@@ -8,6 +8,7 @@ import ScoreOverlay from '@/components/ScoreOverlay';
 import Library from '@/components/Library';
 import ProgressDashboard from '@/components/ProgressDashboard';
 import SettingsPanel from '@/components/SettingsPanel';
+import PedalMinimap from '@/components/PedalMinimap';
 import { useMidi } from '@/hooks/useMidi';
 import { useAudio } from '@/hooks/useAudio';
 import { useSong } from '@/hooks/useSong';
@@ -55,6 +56,9 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [currentSongId, setCurrentSongId] = useState(null);
   const [sessionStartTime, setSessionStartTime] = useState(null);
+
+  // Playback pedal state (from song/recording playback)
+  const [playbackPedals, setPlaybackPedals] = useState({ sustain: false, sostenuto: false, soft: false });
 
   const mainRef = useRef(null);
   const waterfallRef = useRef(null);
@@ -148,9 +152,9 @@ function App() {
       onNoteOff: (note) => { if (audioInitialized) audio.noteOff(note.midi); },
       onPedalEvent: (cc, isOn) => {
         if (!audioInitialized) return;
-        if (cc === 64) audio.setSustain(isOn);
-        else if (cc === 66) audio.setSostenuto(isOn);
-        else if (cc === 67) audio.setSoft(isOn);
+        if (cc === 64) { audio.setSustain(isOn); setPlaybackPedals(p => ({ ...p, sustain: isOn })); }
+        else if (cc === 66) { audio.setSostenuto(isOn); setPlaybackPedals(p => ({ ...p, sostenuto: isOn })); }
+        else if (cc === 67) { audio.setSoft(isOn); setPlaybackPedals(p => ({ ...p, soft: isOn })); }
       },
     });
   }, [audioInitialized, song, audio]);
@@ -183,6 +187,7 @@ function App() {
       audio.setSustain(false);
       audio.setSostenuto(false);
       audio.setSoft(false);
+      setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
       // Give a short grace period for notes to decay naturally, then clean up
       const timer = setTimeout(() => audio.allNotesOff(), 2000);
       return () => clearTimeout(timer);
@@ -266,9 +271,9 @@ function App() {
         if (evt.type === 'noteOn') audio.noteOn(evt.midi, evt.velocity);
         else if (evt.type === 'noteOff') audio.noteOff(evt.midi);
         else if (evt.type === 'pedal') {
-          if (evt.cc === 64) audio.setSustain(evt.isOn);
-          else if (evt.cc === 66) audio.setSostenuto(evt.isOn);
-          else if (evt.cc === 67) audio.setSoft(evt.isOn);
+          if (evt.cc === 64) { audio.setSustain(evt.isOn); setPlaybackPedals(p => ({ ...p, sustain: evt.isOn })); }
+          else if (evt.cc === 66) { audio.setSostenuto(evt.isOn); setPlaybackPedals(p => ({ ...p, sostenuto: evt.isOn })); }
+          else if (evt.cc === 67) { audio.setSoft(evt.isOn); setPlaybackPedals(p => ({ ...p, soft: evt.isOn })); }
         }
       });
     }
@@ -279,7 +284,7 @@ function App() {
     if (!songData.midiData) return;
     const blob = new Blob([songData.midiData]);
     const file = new File([blob], songData.name + '.mid');
-    await song.loadFile(file);
+    await song.loadFile(file, songData.name);
     setCurrentSongId(songData.id);
     setShowLibrary(false);
     updateSongMeta(songData.id, { lastPlayedAt: Date.now() });
@@ -312,7 +317,17 @@ function App() {
 
   const handleSaveRecordingToLibrary = useCallback(async (rec) => {
     try {
+      // Debug: trace pedal events through save pipeline
+      const pedalCount = (rec.events || []).filter(e => e.type === 'pedal').length;
+      console.log(`[PedalDebug] Recording has ${pedalCount} pedal events before MIDI export`);
+
       const midiBuffer = await RecordingEngine.toMidiArrayBuffer(rec);
+
+      // Debug: verify pedal events survived MIDI export by re-parsing
+      const { parseMidiFile } = await import('@/engine/MidiParser');
+      const verifyParsed = parseMidiFile(midiBuffer);
+      console.log(`[PedalDebug] After MIDI export → re-parse: ${verifyParsed.pedalEvents.length} pedal events`);
+
       const saved = await saveSong({
         name: rec.songName || 'My Recording',
         bpm: 120,
@@ -325,7 +340,7 @@ function App() {
       // Load the newly saved song
       const blob = new Blob([midiBuffer]);
       const file = new File([blob], (rec.songName || 'recording') + '.mid');
-      await song.loadFile(file);
+      await song.loadFile(file, rec.songName || 'My Recording');
       setCurrentSongId(saved.id);
       setShowProgress(false);
     } catch (err) {
@@ -536,6 +551,14 @@ function App() {
           </div>
           <Piano activeNotes={midi.activeNotes} songActiveNotes={songActiveNotes}
             width={pianoWidth} height={160} />
+          <PedalMinimap
+            liveSustain={midi.sustainPedal}
+            liveSostenuto={midi.sostenutoPedal}
+            liveSoft={midi.softPedal}
+            playbackSustain={playbackPedals.sustain}
+            playbackSostenuto={playbackPedals.sostenuto}
+            playbackSoft={playbackPedals.soft}
+          />
         </div>
         <PlaybackBar
           song={song.song} isPlaying={song.isPlaying} currentTime={song.currentTime}

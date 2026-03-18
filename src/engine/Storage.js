@@ -286,6 +286,14 @@ export async function getRecordingsForSong(songId) {
     return getAllByIndex(STORES.RECORDINGS, 'songId', songId);
 }
 
+export async function updateRecordingMeta(id, updates) {
+    const rec = await getRecording(id);
+    if (!rec) return null;
+    const updated = { ...rec, ...updates };
+    await put(STORES.RECORDINGS, updated);
+    return updated;
+}
+
 // =================== SETTINGS ===================
 
 export async function saveSetting(key, value) {

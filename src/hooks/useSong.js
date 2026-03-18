@@ -19,11 +19,12 @@ export function useSong() {
     /**
      * Load a MIDI file from a File object
      */
-    const loadFile = useCallback(async (file) => {
+    const loadFile = useCallback(async (file, overrideName) => {
         setLoading(true);
         setError(null);
         try {
             const parsed = await loadMidiFromFile(file);
+            if (overrideName) parsed.name = overrideName;
             const scheduler = schedulerRef.current;
             scheduler.loadSong(parsed);
             setSong(parsed);
