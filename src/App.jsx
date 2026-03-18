@@ -9,6 +9,7 @@ import Library from '@/components/Library';
 import ProgressDashboard from '@/components/ProgressDashboard';
 import SettingsPanel from '@/components/SettingsPanel';
 import PedalMinimap from '@/components/PedalMinimap';
+import RecordingMiniPlayer from '@/components/RecordingMiniPlayer';
 import { useMidi } from '@/hooks/useMidi';
 import { useAudio } from '@/hooks/useAudio';
 import { useSong } from '@/hooks/useSong';
@@ -57,6 +58,11 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [currentSongId, setCurrentSongId] = useState(null);
   const [sessionStartTime, setSessionStartTime] = useState(null);
+
+  // Recording playback state (for mini-player)
+  const [recPlayback, setRecPlayback] = useState({
+    active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0,
+  });
 
   // Playback pedal state (from song/recording playback)
   const [playbackPedals, setPlaybackPedals] = useState({ sustain: false, sostenuto: false, soft: false });
@@ -268,6 +274,19 @@ function App() {
     return () => { window.removeEventListener('resize', handleResize); observer.disconnect(); };
   }, [audioInitialized]);
 
+  // Mutual exclusion: when song starts playing, stop recording playback
+  useEffect(() => {
+    if (song.isPlaying && recordingRef.current.isPlaying) {
+      recordingRef.current.stopPlayback();
+      audio.allNotesOff();
+      audio.setSustain(false);
+      audio.setSostenuto(false);
+      audio.setSoft(false);
+      setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+      setRecPlayback({ active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 });
+    }
+  }, [song.isPlaying]);
+
   // Animation loop
   useAnimationLoop((timestamp) => {
     const result = song.update(timestamp);
@@ -277,8 +296,9 @@ function App() {
     scoreEngineRef.current.checkTimeouts(3000);
 
     // Recording playback
-    if (recordingRef.current.isPlaying) {
-      const events = recordingRef.current.updatePlayback();
+    const rec = recordingRef.current;
+    if (rec.isPlaying) {
+      const events = rec.updatePlayback();
       events.forEach(evt => {
         if (evt.type === 'noteOn') audio.noteOn(evt.midi, evt.velocity);
         else if (evt.type === 'noteOff') audio.noteOff(evt.midi);
@@ -288,19 +308,51 @@ function App() {
           else if (evt.cc === 67) { audio.setSoft(evt.isOn); setPlaybackPedals(p => ({ ...p, soft: evt.isOn })); }
         }
       });
+
+      // Update mini-player state
+      setRecPlayback(prev => ({
+        ...prev,
+        active: rec.isPlaying,
+        paused: rec.isPaused,
+        progress: rec.progress,
+        currentTime: rec.currentTime,
+      }));
+    }
+
+    // Clean up when recording playback ended (naturally or externally)
+    if (!rec.isPlaying) {
+      setRecPlayback(prev => {
+        if (!prev.active) return prev; // already clean
+        audio.allNotesOff();
+        audio.setSustain(false);
+        audio.setSostenuto(false);
+        audio.setSoft(false);
+        setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+        return { active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 };
+      });
     }
   }, audioInitialized);
 
   // Library → load song from saved MIDI data
   const handleSelectSong = useCallback(async (songData) => {
     if (!songData.midiData) return;
+    // Stop any recording playback before loading a song
+    if (recordingRef.current.isPlaying) {
+      recordingRef.current.stopPlayback();
+      audio.allNotesOff();
+      audio.setSustain(false);
+      audio.setSostenuto(false);
+      audio.setSoft(false);
+      setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+      setRecPlayback({ active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 });
+    }
     const blob = new Blob([songData.midiData]);
     const file = new File([blob], songData.name + '.mid');
     await song.loadFile(file, songData.name);
     setCurrentSongId(songData.id);
     setShowLibrary(false);
     updateSongMeta(songData.id, { lastPlayedAt: Date.now() });
-  }, [song]);
+  }, [song, audio]);
 
   // Recording controls
   const toggleRecording = useCallback(() => {
@@ -322,10 +374,41 @@ function App() {
   }, [isRecording, currentSongId, song.song, scoreStats]);
 
   const handlePlayRecording = useCallback((rec) => {
+    // Mutual exclusion: stop any active MIDI song first
+    if (song.isPlaying) {
+      song.stop();
+    }
     recordingRef.current.loadData(rec);
     recordingRef.current.startPlayback();
+    setRecPlayback({
+      active: true, paused: false,
+      name: rec.songName || 'Recording',
+      progress: 0, currentTime: 0,
+      duration: rec.duration || 0,
+    });
     setShowProgress(false);
+  }, [song]);
+
+  // Recording mini-player controls
+  const handleRecPause = useCallback(() => {
+    recordingRef.current.pausePlayback();
+    setRecPlayback(prev => ({ ...prev, paused: true }));
   }, []);
+
+  const handleRecResume = useCallback(() => {
+    recordingRef.current.resumePlayback();
+    setRecPlayback(prev => ({ ...prev, paused: false }));
+  }, []);
+
+  const handleRecStop = useCallback(() => {
+    recordingRef.current.stopPlayback();
+    audio.allNotesOff();
+    audio.setSustain(false);
+    audio.setSostenuto(false);
+    audio.setSoft(false);
+    setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+    setRecPlayback({ active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 });
+  }, [audio]);
 
   const handleSaveRecordingToLibrary = useCallback(async (rec) => {
     try {
@@ -532,6 +615,7 @@ function App() {
                   visibleNotes={visibleNotes} currentTime={song.currentTime}
                   width={pianoWidth} height={waterfallHeight}
                   activeNotes={midi.activeNotes}
+                  songActiveNotes={songActiveNotes}
                   loopEnabled={loopEnabled} loopStart={loopStart} loopEnd={loopEnd}
                   isWaiting={isWaiting}
                 />
@@ -586,6 +670,19 @@ function App() {
       <ProgressDashboard isOpen={showProgress} onClose={() => setShowProgress(false)}
         onPlayRecording={handlePlayRecording} onSaveToLibrary={handleSaveRecordingToLibrary} />
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} onUserChange={setUser} />
+
+      {/* Recording mini-player */}
+      <RecordingMiniPlayer
+        name={recPlayback.name}
+        progress={recPlayback.progress}
+        currentTime={recPlayback.currentTime}
+        duration={recPlayback.duration}
+        isPlaying={recPlayback.active}
+        isPaused={recPlayback.paused}
+        onPause={handleRecPause}
+        onResume={handleRecResume}
+        onStop={handleRecStop}
+      />
 
       {/* Drag overlay */}
       {isDragging && (

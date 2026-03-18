@@ -13,9 +13,12 @@ export class RecordingEngine {
         this.startTime = null;
         this.isRecording = false;
         this.isPlaying = false;
+        this.isPaused = false;
         this.playbackIndex = 0;
         this.playbackStartTime = null;
+        this.playbackPausedElapsed = 0;
         this.duration = 0;
+        this.recordingName = '';
     }
 
     /**
@@ -81,8 +84,29 @@ export class RecordingEngine {
     startPlayback() {
         if (this.events.length === 0) return;
         this.isPlaying = true;
+        this.isPaused = false;
         this.playbackIndex = 0;
         this.playbackStartTime = performance.now();
+        this.playbackPausedElapsed = 0;
+    }
+
+    /**
+     * Pause playback — saves current elapsed time so it can be resumed
+     */
+    pausePlayback() {
+        if (!this.isPlaying || this.isPaused) return;
+        this.isPaused = true;
+        this.playbackPausedElapsed = (performance.now() - this.playbackStartTime) / 1000;
+    }
+
+    /**
+     * Resume playback from where it was paused
+     */
+    resumePlayback() {
+        if (!this.isPlaying || !this.isPaused) return;
+        this.isPaused = false;
+        // Recalculate start time so elapsed stays consistent
+        this.playbackStartTime = performance.now() - this.playbackPausedElapsed * 1000;
     }
 
     /**
@@ -90,8 +114,27 @@ export class RecordingEngine {
      */
     stopPlayback() {
         this.isPlaying = false;
+        this.isPaused = false;
         this.playbackIndex = 0;
         this.playbackStartTime = null;
+        this.playbackPausedElapsed = 0;
+    }
+
+    /**
+     * Get current playback time in seconds
+     */
+    get currentTime() {
+        if (!this.isPlaying) return 0;
+        if (this.isPaused) return this.playbackPausedElapsed;
+        return (performance.now() - this.playbackStartTime) / 1000;
+    }
+
+    /**
+     * Get playback progress as 0–1 ratio
+     */
+    get progress() {
+        if (!this.isPlaying || this.duration <= 0) return 0;
+        return Math.min(1, this.currentTime / this.duration);
     }
 
     /**
@@ -99,7 +142,7 @@ export class RecordingEngine {
      * Returns events that should fire this frame (noteOn, noteOff, pedal).
      */
     updatePlayback() {
-        if (!this.isPlaying || this.events.length === 0) return [];
+        if (!this.isPlaying || this.isPaused || this.events.length === 0) return [];
 
         const elapsed = (performance.now() - this.playbackStartTime) / 1000;
         const eventsToFire = [];
@@ -114,9 +157,12 @@ export class RecordingEngine {
             }
         }
 
-        // Check if playback ended
-        if (this.playbackIndex >= this.events.length) {
+        // Check if playback ended — wait for duration to elapse, not just events
+        const finished = this.playbackIndex >= this.events.length &&
+            (this.duration <= 0 || elapsed >= this.duration);
+        if (finished) {
             this.isPlaying = false;
+            this.isPaused = false;
         }
 
         return eventsToFire;

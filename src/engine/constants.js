@@ -60,6 +60,13 @@ export const COLORS = {
   }
 };
 
+// FX particle colors (RGB for canvas rendering)
+export const FX_COLORS = {
+  rightHand: { r: 232, g: 213, b: 168 },  // warm gold
+  leftHand:  { r: 170, g: 185, b: 215 },  // cool blue
+  flash:     { r: 255, g: 248, b: 230 },  // near-white warm
+};
+
 // Key dimensions (will be scaled)
 export const KEY_LAYOUT = {
   whiteKeyWidth: 24,
