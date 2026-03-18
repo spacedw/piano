@@ -1,4 +1,5 @@
 import React from 'react';
+import { useT } from '@/i18n';
 import styles from './index.module.css';
 
 /**
@@ -15,6 +16,7 @@ export default function MidiStatus({
     softPedal,
 }) {
     const isConnected = !!selectedInput;
+    const t = useT();
 
     // MIDI not supported (mobile / Firefox / Safari)
     if (!enabled && error) {
@@ -31,7 +33,7 @@ export default function MidiStatus({
                         <line x1="12" y1="16" x2="12" y2="12" />
                         <line x1="12" y1="8" x2="12.01" y2="8" />
                     </svg>
-                    <span className={styles.midiTooltip}>Requires Chrome or Edge on desktop</span>
+                    <span className={styles.midiTooltip}>{t('midi.requiresBrowser')}</span>
                 </div>
             </div>
         );
@@ -42,7 +44,7 @@ export default function MidiStatus({
             <div className={`${styles.statusIndicator} ${isConnected ? styles.connected : styles.disconnected}`}>
                 <div className={styles.statusDot} />
                 <span className={styles.statusText}>
-                    {isConnected ? selectedInput.name : enabled ? 'No Device' : 'MIDI Disabled'}
+                    {isConnected ? selectedInput.name : enabled ? t('midi.noDevice') : t('midi.disabled')}
                 </span>
             </div>
 

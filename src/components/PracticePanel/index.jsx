@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SPEED_OPTIONS } from '@/engine/constants';
+import { useT } from '@/i18n';
 import styles from './index.module.css';
 
 /**
@@ -19,6 +20,7 @@ export default function PracticePanel({
     scoreStats,
 }) {
     const [expanded, setExpanded] = useState(true);
+    const t = useT();
 
     if (!song) return null;
 
@@ -33,9 +35,9 @@ export default function PracticePanel({
             <button
                 className={styles.panelToggle}
                 onClick={() => setExpanded(!expanded)}
-                title={expanded ? 'Collapse' : 'Expand practice panel'}
+                title={expanded ? t('practice.collapse') : t('practice.expand')}
             >
-                <span className={styles.panelToggleLabel}>Practice Mode</span>
+                <span className={styles.panelToggleLabel}>{t('practice.title')}</span>
                 <svg
                     width="14" height="14" viewBox="0 0 24 24" fill="none"
                     stroke="currentColor" strokeWidth="2"
@@ -51,7 +53,7 @@ export default function PracticePanel({
                     <div className={styles.panelSection}>
                         <div className={styles.sectionHeader}>
                             <span className={styles.sectionIcon}>⏸</span>
-                            <span>Wait Mode</span>
+                            <span>{t('practice.waitMode')}</span>
                         </div>
                         <div className={styles.sectionBody}>
                             <label className={styles.toggleSwitch}>
@@ -62,11 +64,11 @@ export default function PracticePanel({
                                 />
                                 <span className={styles.toggleSlider} />
                                 <span className={styles.toggleLabel}>
-                                    {waitMode ? 'On' : 'Off'}
-                                    {isWaiting && <span className={styles.waitingBadge}>Waiting...</span>}
+                                    {waitMode ? t('settings.on') : t('settings.off')}
+                                    {isWaiting && <span className={styles.waitingBadge}>{t('practice.waiting')}</span>}
                                 </span>
                             </label>
-                            <span className={styles.sectionHint}>Pauses until you play the correct note</span>
+                            <span className={styles.sectionHint}>{t('practice.waitModeHint')}</span>
                         </div>
                     </div>
 
@@ -74,7 +76,7 @@ export default function PracticePanel({
                     <div className={styles.panelSection}>
                         <div className={styles.sectionHeader}>
                             <span className={styles.sectionIcon}>✋</span>
-                            <span>Hands</span>
+                            <span>{t('practice.hands')}</span>
                         </div>
                         <div className={styles.sectionBody}>
                             <div className={styles.handButtons}>
@@ -84,7 +86,7 @@ export default function PracticePanel({
                                         className={`${styles.handBtn} ${handMode === mode ? styles.active : ''}`}
                                         onClick={() => onHandModeChange(mode)}
                                     >
-                                        {mode === 'both' ? '🎹 Both' : mode === 'right' ? '👉 Right' : '👈 Left'}
+                                        {mode === 'both' ? t('practice.handBoth') : mode === 'right' ? t('practice.handRight') : t('practice.handLeft')}
                                     </button>
                                 ))}
                             </div>
@@ -95,7 +97,7 @@ export default function PracticePanel({
                     <div className={styles.panelSection}>
                         <div className={styles.sectionHeader}>
                             <span className={styles.sectionIcon}>⚡</span>
-                            <span>Speed</span>
+                            <span>{t('practice.speed')}</span>
                             <span className={styles.sectionValue}>{speed}x</span>
                         </div>
                         <div className={styles.sectionBody}>
@@ -124,7 +126,7 @@ export default function PracticePanel({
                     <div className={styles.panelSection}>
                         <div className={styles.sectionHeader}>
                             <span className={styles.sectionIcon}>🔁</span>
-                            <span>Loop</span>
+                            <span>{t('practice.loop')}</span>
                         </div>
                         <div className={styles.sectionBody}>
                             <label className={styles.toggleSwitch}>
@@ -134,13 +136,13 @@ export default function PracticePanel({
                                     onChange={(e) => onLoopChange(e.target.checked)}
                                 />
                                 <span className={styles.toggleSlider} />
-                                <span className={styles.toggleLabel}>{loopEnabled ? 'On' : 'Off'}</span>
+                                <span className={styles.toggleLabel}>{loopEnabled ? t('settings.on') : t('settings.off')}</span>
                             </label>
                             {loopEnabled && (
                                 <div className={styles.loopControls}>
                                     <div className={styles.loopInputs}>
                                         <div className={styles.loopField}>
-                                            <label>Start</label>
+                                            <label>{t('practice.loopStart')}</label>
                                             <input
                                                 type="range" min="0" max={totalDuration} step="0.5"
                                                 value={loopStart}
@@ -149,7 +151,7 @@ export default function PracticePanel({
                                             <span className={styles.loopTime}>{formatTime(loopStart)}</span>
                                         </div>
                                         <div className={styles.loopField}>
-                                            <label>End</label>
+                                            <label>{t('practice.loopEnd')}</label>
                                             <input
                                                 type="range" min={loopStart + 1} max={totalDuration} step="0.5"
                                                 value={loopEnd}
@@ -165,7 +167,7 @@ export default function PracticePanel({
                                             Math.min(totalDuration, currentTime + 8)
                                         )}
                                     >
-                                        Loop from here (10s)
+                                        {t('practice.loopFromHere')}
                                     </button>
                                 </div>
                             )}
@@ -176,7 +178,7 @@ export default function PracticePanel({
                     <div className={styles.panelSection}>
                         <div className={styles.sectionHeader}>
                             <span className={styles.sectionIcon}>🥁</span>
-                            <span>Metronome</span>
+                            <span>{t('practice.metronome')}</span>
                             <span className={styles.sectionValue}>{metronomeBpm} BPM</span>
                         </div>
                         <div className={styles.sectionBody}>
@@ -188,7 +190,7 @@ export default function PracticePanel({
                                         onChange={onMetronomeToggle}
                                     />
                                     <span className={styles.toggleSlider} />
-                                    <span className={styles.toggleLabel}>{metronomeEnabled ? 'On' : 'Off'}</span>
+                                    <span className={styles.toggleLabel}>{metronomeEnabled ? t('settings.on') : t('settings.off')}</span>
                                 </label>
                                 {metronomeEnabled && (
                                     <div className={styles.beatDots}>
@@ -222,7 +224,7 @@ export default function PracticePanel({
                         <div className={`${styles.panelSection} ${styles.scoreSection}`}>
                             <div className={styles.sectionHeader}>
                                 <span className={styles.sectionIcon}>🏆</span>
-                                <span>Score</span>
+                                <span>{t('practice.score')}</span>
                                 <span className={styles.sectionValue} style={{ color: scoreStats.level.color }}>
                                     {scoreStats.totalScore}%
                                 </span>
@@ -230,19 +232,19 @@ export default function PracticePanel({
                             <div className={styles.sectionBody}>
                                 <div className={styles.scoreGrid}>
                                     <div className={styles.scoreItem}>
-                                        <span className={styles.scoreLabel}>Accuracy</span>
+                                        <span className={styles.scoreLabel}>{t('practice.accuracy')}</span>
                                         <span className={styles.scoreValue}>{scoreStats.accuracy}%</span>
                                     </div>
                                     <div className={styles.scoreItem}>
-                                        <span className={styles.scoreLabel}>Notes Hit</span>
+                                        <span className={styles.scoreLabel}>{t('practice.notesHit')}</span>
                                         <span className={styles.scoreValue}>{scoreStats.notesHit}/{scoreStats.totalNotes}</span>
                                     </div>
                                     <div className={styles.scoreItem}>
-                                        <span className={styles.scoreLabel}>Streak</span>
+                                        <span className={styles.scoreLabel}>{t('practice.streak')}</span>
                                         <span className={styles.scoreValue}>{scoreStats.streak}</span>
                                     </div>
                                     <div className={styles.scoreItem}>
-                                        <span className={styles.scoreLabel}>Best Streak</span>
+                                        <span className={styles.scoreLabel}>{t('practice.bestStreak')}</span>
                                         <span className={styles.scoreValue}>{scoreStats.maxStreak}</span>
                                     </div>
                                 </div>
