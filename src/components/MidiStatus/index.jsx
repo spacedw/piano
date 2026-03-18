@@ -60,7 +60,7 @@ export default function MidiStatus({
                 </select>
             )}
 
-            <div className={styles.pedalGroup}>
+            {/* <div className={styles.pedalGroup}>
                 {sustainPedal && (
                     <div className={`${styles.pedalIndicator} ${styles.pedalSustain}`}>
                         <span>SUS</span>
@@ -76,7 +76,7 @@ export default function MidiStatus({
                         <span>SOFT</span>
                     </div>
                 )}
-            </div>
+            </div> */}
         </div>
     );
 }

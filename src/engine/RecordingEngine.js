@@ -183,7 +183,7 @@ export class RecordingEngine {
             } else if (evt.type === 'pedal') {
                 track.addCC({
                     number: evt.cc,
-                    value: evt.isOn ? 127 : 0,
+                    value: evt.isOn ? 1 : 0,
                     time: evt.time,
                 });
             }
