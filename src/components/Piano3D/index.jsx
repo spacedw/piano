@@ -16,26 +16,26 @@ const KEY_TOP = WKH;
 const PIANO_W = TOTAL_WHITE * WKW;
 
 // ─── Note fall ──────────────────────────────────────────────────────────────
-const UPS = 2.8;        // units-per-second (faster for taller canvas)
-const LOOK_AHEAD = 5.0; // seconds of notes visible
+const UPS = 1.4;        // units-per-second for note fall speed
+const LOOK_AHEAD = 4.0; // seconds of notes visible
 const NOTE_POOL = 300;
 
 // ─── Camera presets ─────────────────────────────────────────────────────────
 const PRESETS = [
     {
         name: 'Front',
-        pos: new THREE.Vector3(0, 5.5, 10),
-        target: new THREE.Vector3(0, 1.2, -1),
+        pos: new THREE.Vector3(0, 6, 16),
+        target: new THREE.Vector3(0, 0.5, 0),
     },
     {
         name: 'Stage',
-        pos: new THREE.Vector3(-6, 6.5, 8),
-        target: new THREE.Vector3(0, 1.0, -1),
+        pos: new THREE.Vector3(-8, 7, 14),
+        target: new THREE.Vector3(0, 0.3, 0),
     },
     {
         name: 'Player',
-        pos: new THREE.Vector3(0, 3.2, 5.5),
-        target: new THREE.Vector3(0, 1.5, -2),
+        pos: new THREE.Vector3(0, 3.5, 9),
+        target: new THREE.Vector3(0, 1.0, -1),
     },
 ];
 
@@ -235,10 +235,10 @@ export default function Piano3D({
         // Scene
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x06060A);
-        scene.fog = new THREE.FogExp2(0x06060A, 0.035);
+        scene.fog = new THREE.FogExp2(0x06060A, 0.018);
 
         // Camera
-        const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 120);
+        const camera = new THREE.PerspectiveCamera(50, w / h, 0.1, 120);
         camera.position.copy(PRESETS[0].pos);
         camera.lookAt(PRESETS[0].target);
         cameraRef.current = camera;
@@ -261,8 +261,8 @@ export default function Piano3D({
         fill.position.set(0, 2, 10);
         scene.add(fill);
 
-        // Cool rim light from behind
-        const rim = new THREE.DirectionalLight(0x3355aa, 0.35);
+        // Cool rim light from behind (subtle)
+        const rim = new THREE.DirectionalLight(0x3355aa, 0.12);
         rim.position.set(0, 4, -8);
         scene.add(rim);
 
