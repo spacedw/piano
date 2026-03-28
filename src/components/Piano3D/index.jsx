@@ -46,13 +46,13 @@ function easeInOut(t) {
 // ─── Grand piano body builder ───────────────────────────────────────────────
 function buildGrandPianoBody(scene) {
     const lacquer = new THREE.MeshStandardMaterial({
-        color: 0x080810, roughness: 0.05, metalness: 0.35,
+        color: 0x1a1a24, roughness: 0.35, metalness: 0.05,
     });
     const lacquerInner = new THREE.MeshStandardMaterial({
-        color: 0x12121A, roughness: 0.08, metalness: 0.2,
+        color: 0x1e1e28, roughness: 0.4, metalness: 0.02,
     });
     const metalMat = new THREE.MeshStandardMaterial({
-        color: 0xC9A96E, roughness: 0.25, metalness: 0.85,
+        color: 0xC9A96E, roughness: 0.3, metalness: 0.6,
     });
 
     const bodyW = PIANO_W + 0.5;
@@ -173,9 +173,9 @@ function buildGrandPianoBody(scene) {
     // ── Floor / reflective surface ──────────────────────────────────────────
     const floorGeo = new THREE.PlaneGeometry(30, 30);
     const floorMat = new THREE.MeshStandardMaterial({
-        color: 0x0A0A0E,
-        roughness: 0.35,
-        metalness: 0.15,
+        color: 0x12121a,
+        roughness: 0.6,
+        metalness: 0.02,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
@@ -229,7 +229,7 @@ export default function Piano3D({
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        renderer.toneMappingExposure = 1.1;
+        renderer.toneMappingExposure = 1.6;
         rendererRef.current = renderer;
 
         // Scene
@@ -244,10 +244,13 @@ export default function Piano3D({
         cameraRef.current = camera;
 
         // ── Lights ──────────────────────────────────────────────────────────
-        scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+        // Hemisphere: sky warm / ground cool — fills shadows naturally
+        const hemi = new THREE.HemisphereLight(0xfff5e6, 0x1a1a2e, 0.7);
+        scene.add(hemi);
 
-        const sun = new THREE.DirectionalLight(0xfff8f0, 1.4);
-        sun.position.set(3, 12, 6);
+        // Main sun — bright, warm, from above-front
+        const sun = new THREE.DirectionalLight(0xfff8f0, 2.0);
+        sun.position.set(3, 12, 8);
         sun.castShadow = true;
         sun.shadow.mapSize.set(2048, 2048);
         Object.assign(sun.shadow.camera, {
@@ -256,20 +259,25 @@ export default function Piano3D({
         sun.shadow.bias = -0.001;
         scene.add(sun);
 
-        // Warm fill from front
-        const fill = new THREE.DirectionalLight(0xfff0d0, 0.3);
-        fill.position.set(0, 2, 10);
+        // Front fill — illuminates keys and front of piano body
+        const fill = new THREE.DirectionalLight(0xfff0d0, 0.8);
+        fill.position.set(0, 3, 12);
         scene.add(fill);
 
-        // Cool rim light from behind (subtle)
-        const rim = new THREE.DirectionalLight(0x3355aa, 0.12);
-        rim.position.set(0, 4, -8);
+        // Side fill — gives dimension to the piano body
+        const side = new THREE.DirectionalLight(0xffe8cc, 0.4);
+        side.position.set(-10, 5, 3);
+        scene.add(side);
+
+        // Subtle cool rim from behind for edge definition
+        const rim = new THREE.DirectionalLight(0x6688cc, 0.25);
+        rim.position.set(0, 3, -10);
         scene.add(rim);
 
-        // Warm spotlight on keys
-        const spot = new THREE.SpotLight(0xC9A96E, 1.2, 15, 0.5, 0.7, 1.5);
-        spot.position.set(0, 6, 2);
-        spot.target.position.set(0, 0, 0.5);
+        // Warm spot focused on the keyboard area
+        const spot = new THREE.SpotLight(0xffeedd, 2.5, 20, 0.6, 0.8, 1.2);
+        spot.position.set(0, 8, 4);
+        spot.target.position.set(0, 0, 0.6);
         scene.add(spot);
         scene.add(spot.target);
 
