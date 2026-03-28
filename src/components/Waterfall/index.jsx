@@ -127,12 +127,9 @@ export default function Waterfall({
             ctx.globalAlpha = 1.0;
         }
 
-        const hitLineY = height - 2;
-        const hitGrad = ctx.createLinearGradient(0, hitLineY - 2, 0, hitLineY);
-        hitGrad.addColorStop(0, 'rgba(201, 169, 110, 0)');
-        hitGrad.addColorStop(1, 'rgba(201, 169, 110, 0.6)');
-        ctx.fillStyle = hitGrad;
-        ctx.fillRect(0, hitLineY - 2, width, 2);
+        // Hit line — ultra-subtle 1px separator, barely visible
+        ctx.fillStyle = 'rgba(201, 169, 110, 0.12)';
+        ctx.fillRect(0, height - 1, width, 1);
 
         activeNotes.forEach((velocity, midi) => {
             const x = getKeyX(midi);

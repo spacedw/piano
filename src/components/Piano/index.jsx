@@ -77,16 +77,22 @@ export default function Piano({ activeNotes = new Map(), songActiveNotes = [], w
             const active = activeSet.get(key.midi);
 
             if (active) {
+                const isRight = active.source === 'user' || active.isRightHand;
                 if (active.source === 'user') {
                     ctx.fillStyle = COLORS.accentLight;
                 } else {
-                    ctx.fillStyle = active.isRightHand ? COLORS.accentGold : COLORS.leftHand;
+                    ctx.fillStyle = isRight ? COLORS.accentGold : COLORS.leftHand;
                 }
+                // Glow flash on active white keys
+                ctx.shadowColor  = isRight ? COLORS.accentGold : COLORS.leftHand;
+                ctx.shadowBlur   = 14;
             } else {
-                ctx.fillStyle = COLORS.whiteKey;
+                ctx.fillStyle  = COLORS.whiteKey;
+                ctx.shadowBlur = 0;
             }
 
             ctx.fillRect(key.x, key.y, key.width, key.height);
+            ctx.shadowBlur = 0;   // reset after fill so stroke isn't affected
 
             ctx.strokeStyle = '#D0D0D0';
             ctx.lineWidth = 0.5;
@@ -105,18 +111,23 @@ export default function Piano({ activeNotes = new Map(), songActiveNotes = [], w
             const active = activeSet.get(key.midi);
 
             if (active) {
+                const isRight = active.source === 'user' || active.isRightHand;
                 if (active.source === 'user') {
                     ctx.fillStyle = COLORS.accentGold;
                 } else {
-                    ctx.fillStyle = active.isRightHand
+                    ctx.fillStyle = isRight
                         ? 'rgba(201, 169, 110, 0.9)'
                         : 'rgba(139, 157, 195, 0.9)';
                 }
+                // Glow flash on active black keys
+                ctx.shadowColor = isRight ? COLORS.accentGold : COLORS.leftHand;
+                ctx.shadowBlur  = 16;
             } else {
                 const grad = ctx.createLinearGradient(key.x, 0, key.x, key.height);
                 grad.addColorStop(0, '#2A2A2E');
                 grad.addColorStop(1, '#0A0A0B');
-                ctx.fillStyle = grad;
+                ctx.fillStyle  = grad;
+                ctx.shadowBlur = 0;
             }
 
             const r = 2;
@@ -130,6 +141,7 @@ export default function Piano({ activeNotes = new Map(), songActiveNotes = [], w
             ctx.quadraticCurveTo(key.x, key.y, key.x + r, key.y);
             ctx.closePath();
             ctx.fill();
+            ctx.shadowBlur = 0;  // reset so shine overlay has no glow
 
             if (!active) {
                 const shine = ctx.createLinearGradient(key.x, 0, key.x, key.height * 0.3);
