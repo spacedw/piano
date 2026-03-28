@@ -1,9 +1,9 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import * as THREE from 'three';
 import { FIRST_NOTE, LAST_NOTE, isBlackKey, getWhiteKeyIndex } from '@/engine/constants';
 import styles from './index.module.css';
 
-// ─── Layout constants ───────────────────────────────────────────────────────
+// ─── Key layout ─────────────────────────────────────────────────────────────
 const TOTAL_WHITE = 52;
 const WKW = 0.221;    // white key width
 const WKH = 0.13;     // white key height  (Y)
@@ -12,32 +12,176 @@ const BKW = 0.133;    // black key width
 const BKH = 0.23;     // black key height
 const BKD = 0.73;     // black key depth
 const OFFSET_X = -(TOTAL_WHITE * WKW) / 2;
-const KEY_TOP = WKH;  // Y of the white-key top surface
-const UPS = 1.8;      // units-per-second for note fall speed
-const LOOK_AHEAD = 2.4; // seconds of notes rendered above keys
-const NOTE_POOL = 200;  // max simultaneous note meshes
+const KEY_TOP = WKH;
+const PIANO_W = TOTAL_WHITE * WKW;
+
+// ─── Note fall ──────────────────────────────────────────────────────────────
+const UPS = 2.8;        // units-per-second (faster for taller canvas)
+const LOOK_AHEAD = 5.0; // seconds of notes visible
+const NOTE_POOL = 300;
 
 // ─── Camera presets ─────────────────────────────────────────────────────────
 const PRESETS = [
     {
         name: 'Front',
-        pos: new THREE.Vector3(0, 3.2, 6.5),
-        target: new THREE.Vector3(0, 0.4, 0.6),
+        pos: new THREE.Vector3(0, 5.5, 10),
+        target: new THREE.Vector3(0, 1.2, -1),
     },
     {
         name: 'Stage',
-        pos: new THREE.Vector3(-4.5, 4.5, 5.0),
-        target: new THREE.Vector3(0, 0.3, 0.6),
+        pos: new THREE.Vector3(-6, 6.5, 8),
+        target: new THREE.Vector3(0, 1.0, -1),
     },
     {
         name: 'Player',
-        pos: new THREE.Vector3(0, 1.5, 3.8),
-        target: new THREE.Vector3(0, 0.7, -0.3),
+        pos: new THREE.Vector3(0, 3.2, 5.5),
+        target: new THREE.Vector3(0, 1.5, -2),
     },
 ];
 
 function easeInOut(t) {
     return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+}
+
+// ─── Grand piano body builder ───────────────────────────────────────────────
+function buildGrandPianoBody(scene) {
+    const lacquer = new THREE.MeshStandardMaterial({
+        color: 0x080810, roughness: 0.05, metalness: 0.35,
+    });
+    const lacquerInner = new THREE.MeshStandardMaterial({
+        color: 0x12121A, roughness: 0.08, metalness: 0.2,
+    });
+    const metalMat = new THREE.MeshStandardMaterial({
+        color: 0xC9A96E, roughness: 0.25, metalness: 0.85,
+    });
+
+    const bodyW = PIANO_W + 0.5;
+    const bodyD = 6.5;    // grand piano is deep
+    const rimH = 0.22;
+
+    // ── Main case (rim) ─────────────────────────────────────────────────────
+    // Approximated with an elongated shape. Using a CatmullRom curve for the
+    // curved tail of the grand piano.
+    const caseShape = new THREE.Shape();
+    const hw = bodyW / 2;
+    const rearZ = -bodyD + WKD;
+    // Front edge
+    caseShape.moveTo(-hw, WKD + 0.15);
+    caseShape.lineTo(hw, WKD + 0.15);
+    // Right side
+    caseShape.lineTo(hw + 0.1, WKD);
+    caseShape.lineTo(hw * 0.95, WKD * 0.5);
+    caseShape.lineTo(hw * 0.75, rearZ * 0.3);
+    // Curved tail
+    caseShape.quadraticCurveTo(hw * 0.5, rearZ * 0.7, hw * 0.15, rearZ * 0.85);
+    caseShape.quadraticCurveTo(0, rearZ, -hw * 0.15, rearZ * 0.85);
+    // Left side
+    caseShape.lineTo(-hw * 0.75, rearZ * 0.3);
+    caseShape.lineTo(-hw * 0.95, WKD * 0.5);
+    caseShape.lineTo(-hw - 0.1, WKD);
+    caseShape.lineTo(-hw, WKD + 0.15);
+
+    // Rim (extruded walls)
+    const extrudeSettings = { depth: rimH, bevelEnabled: false };
+    const rimGeo = new THREE.ExtrudeGeometry(caseShape, extrudeSettings);
+    rimGeo.rotateX(-Math.PI / 2);
+    const rim = new THREE.Mesh(rimGeo, lacquer);
+    rim.position.y = -0.01;
+    rim.receiveShadow = true;
+    rim.castShadow = true;
+    scene.add(rim);
+
+    // Soundboard (flat surface under strings)
+    const boardGeo = new THREE.ShapeGeometry(caseShape);
+    boardGeo.rotateX(-Math.PI / 2);
+    const board = new THREE.Mesh(boardGeo, lacquerInner);
+    board.position.y = 0.005;
+    board.receiveShadow = true;
+    scene.add(board);
+
+    // ── Lid (open at ~30°) ──────────────────────────────────────────────────
+    const lidShape = new THREE.Shape();
+    const lhw = bodyW / 2 - 0.1;
+    const lidRearZ = rearZ + 0.15;
+    lidShape.moveTo(-lhw, 0.05);
+    lidShape.lineTo(lhw, 0.05);
+    lidShape.lineTo(lhw * 0.93, -WKD * 0.3);
+    lidShape.lineTo(lhw * 0.73, lidRearZ * 0.3);
+    lidShape.quadraticCurveTo(lhw * 0.45, lidRearZ * 0.7, lhw * 0.12, lidRearZ * 0.82);
+    lidShape.quadraticCurveTo(0, lidRearZ * 0.95, -lhw * 0.12, lidRearZ * 0.82);
+    lidShape.lineTo(-lhw * 0.73, lidRearZ * 0.3);
+    lidShape.lineTo(-lhw * 0.93, -WKD * 0.3);
+    lidShape.lineTo(-lhw, 0.05);
+
+    const lidGeo = new THREE.ExtrudeGeometry(lidShape, { depth: 0.04, bevelEnabled: false });
+    lidGeo.rotateX(-Math.PI / 2);
+    const lid = new THREE.Mesh(lidGeo, lacquer);
+    lid.position.set(0, rimH + 0.02, 0);
+    // Pivot at the back hinge — rotate open ~28°
+    const lidGroup = new THREE.Group();
+    lidGroup.add(lid);
+    lidGroup.position.set(0, rimH, -0.1);
+    lidGroup.rotation.x = -0.49; // ~28° open
+    lid.position.y = 0;
+    lid.castShadow = true;
+    scene.add(lidGroup);
+
+    // ── Lid prop (stick holding lid open) ────────────────────────────────────
+    const propGeo = new THREE.CylinderGeometry(0.015, 0.015, 1.6, 6);
+    const prop = new THREE.Mesh(propGeo, metalMat);
+    prop.position.set(hw * 0.3, rimH + 0.75, -0.5);
+    prop.rotation.z = 0.08;
+    prop.rotation.x = -0.2;
+    prop.castShadow = true;
+    scene.add(prop);
+
+    // ── Legs (3 legs) ───────────────────────────────────────────────────────
+    const legGeo = new THREE.CylinderGeometry(0.06, 0.05, 1.8, 8);
+    const legPositions = [
+        [-hw + 0.4, WKD - 0.1],   // front-left
+        [hw - 0.4, WKD - 0.1],    // front-right
+        [0, rearZ * 0.55],         // rear-center
+    ];
+    for (const [lx, lz] of legPositions) {
+        const leg = new THREE.Mesh(legGeo, lacquer);
+        leg.position.set(lx, -0.9, lz);
+        leg.castShadow = true;
+        scene.add(leg);
+        // Gold caster
+        const caster = new THREE.Mesh(
+            new THREE.SphereGeometry(0.06, 8, 6),
+            metalMat
+        );
+        caster.position.set(lx, -1.8, lz);
+        scene.add(caster);
+    }
+
+    // ── Music rack (the small shelf above keys) ─────────────────────────────
+    const rackGeo = new THREE.BoxGeometry(PIANO_W * 0.65, 0.8, 0.03);
+    const rack = new THREE.Mesh(rackGeo, lacquer);
+    rack.position.set(0, rimH + 0.5, -0.25);
+    rack.rotation.x = -0.15;
+    rack.castShadow = true;
+    scene.add(rack);
+
+    // ── Fallboard (front edge above keys) ───────────────────────────────────
+    const fallGeo = new THREE.BoxGeometry(bodyW, 0.06, 0.1);
+    const fall = new THREE.Mesh(fallGeo, lacquer);
+    fall.position.set(0, rimH * 0.5, WKD + 0.12);
+    scene.add(fall);
+
+    // ── Floor / reflective surface ──────────────────────────────────────────
+    const floorGeo = new THREE.PlaneGeometry(30, 30);
+    const floorMat = new THREE.MeshStandardMaterial({
+        color: 0x0A0A0E,
+        roughness: 0.35,
+        metalness: 0.15,
+    });
+    const floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -1.82;
+    floor.receiveShadow = true;
+    scene.add(floor);
 }
 
 // ─── Component ──────────────────────────────────────────────────────────────
@@ -47,21 +191,20 @@ export default function Piano3D({
     visibleNotes = [],
     currentTime = 0,
     width = 1200,
-    height = 240,
+    fullHeight = false,
 }) {
+    const containerRef = useRef(null);
     const canvasRef = useRef(null);
-
-    // Three.js object refs (never trigger re-renders)
     const rendererRef = useRef(null);
     const cameraRef = useRef(null);
-    const keyMeshesRef = useRef([]);        // [88] key meshes
-    const noteMeshesRef = useRef([]);       // pool of note meshes
-    const noteMatRef = useRef({});          // { rightActive, rightIdle, leftActive, leftIdle }
+    const keyMeshesRef = useRef([]);
+    const noteMeshesRef = useRef([]);
+    const noteMatRef = useRef({});
     const frameIdRef = useRef(null);
     const camLookAtRef = useRef(PRESETS[0].target.clone());
-    const transitionRef = useRef(null);     // active camera lerp
+    const transitionRef = useRef(null);
+    const sizeRef = useRef({ w: width, h: 600 });
 
-    // Latest-prop refs (written by effects, read by rAF loop)
     const activeNotesRef = useRef(activeNotes);
     const songActiveNotesRef = useRef(songActiveNotes);
     const visibleNotesRef = useRef(visibleNotes);
@@ -69,87 +212,69 @@ export default function Piano3D({
 
     const [presetIdx, setPresetIdx] = useState(0);
 
-    // ── Scene setup (once on mount) ─────────────────────────────────────────
+    // ── Scene setup ─────────────────────────────────────────────────────────
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return;
+        const container = containerRef.current;
+        if (!canvas || !container) return;
+
+        const h = container.clientHeight || 600;
+        const w = container.clientWidth || width;
+        sizeRef.current = { w, h };
 
         // Renderer
-        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
         renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-        renderer.setSize(width, height);
+        renderer.setSize(w, h);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.1;
         rendererRef.current = renderer;
 
         // Scene
         const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x0A0A0B);
-        scene.fog = new THREE.FogExp2(0x0A0A0B, 0.042);
+        scene.background = new THREE.Color(0x06060A);
+        scene.fog = new THREE.FogExp2(0x06060A, 0.035);
 
         // Camera
-        const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+        const camera = new THREE.PerspectiveCamera(38, w / h, 0.1, 120);
         camera.position.copy(PRESETS[0].pos);
         camera.lookAt(PRESETS[0].target);
         cameraRef.current = camera;
 
         // ── Lights ──────────────────────────────────────────────────────────
-        scene.add(new THREE.AmbientLight(0xffffff, 0.32));
+        scene.add(new THREE.AmbientLight(0xffffff, 0.25));
 
-        const sun = new THREE.DirectionalLight(0xffffff, 1.1);
-        sun.position.set(2, 9, 6);
+        const sun = new THREE.DirectionalLight(0xfff8f0, 1.4);
+        sun.position.set(3, 12, 6);
         sun.castShadow = true;
-        sun.shadow.mapSize.set(1024, 1024);
-        Object.assign(sun.shadow.camera, { left: -8, right: 8, top: 8, bottom: -2, far: 30 });
+        sun.shadow.mapSize.set(2048, 2048);
+        Object.assign(sun.shadow.camera, {
+            left: -10, right: 10, top: 10, bottom: -6, far: 40,
+        });
+        sun.shadow.bias = -0.001;
         scene.add(sun);
 
-        // Warm fill from front to give keys dimension
-        const fill = new THREE.DirectionalLight(0xfff5e0, 0.25);
-        fill.position.set(0, 1, 8);
+        // Warm fill from front
+        const fill = new THREE.DirectionalLight(0xfff0d0, 0.3);
+        fill.position.set(0, 2, 10);
         scene.add(fill);
 
-        // Subtle cool accent from below
-        const cool = new THREE.DirectionalLight(0x4466aa, 0.15);
-        cool.position.set(0, -3, 5);
-        scene.add(cool);
+        // Cool rim light from behind
+        const rim = new THREE.DirectionalLight(0x3355aa, 0.35);
+        rim.position.set(0, 4, -8);
+        scene.add(rim);
 
-        // Warm point light over the key area for glow
-        const keyGlow = new THREE.PointLight(0xC9A96E, 0.5, 7);
-        keyGlow.position.set(0, 1.2, 1.8);
-        scene.add(keyGlow);
+        // Warm spotlight on keys
+        const spot = new THREE.SpotLight(0xC9A96E, 1.2, 15, 0.5, 0.7, 1.5);
+        spot.position.set(0, 6, 2);
+        spot.target.position.set(0, 0, 0.5);
+        scene.add(spot);
+        scene.add(spot.target);
 
-        // ── Piano body ──────────────────────────────────────────────────────
-        const lacquer = new THREE.MeshStandardMaterial({
-            color: 0x0D0D10,
-            roughness: 0.06,
-            metalness: 0.3,
-        });
-        const bodyW = TOTAL_WHITE * WKW + 0.4;
-
-        // Platform
-        const platform = new THREE.Mesh(new THREE.BoxGeometry(bodyW, 0.14, WKD + 0.5), lacquer);
-        platform.position.set(0, -0.07, WKD / 2 + 0.05);
-        platform.receiveShadow = true;
-        scene.add(platform);
-
-        // Back panel
-        const backPanel = new THREE.Mesh(new THREE.BoxGeometry(bodyW, 0.55, 0.08), lacquer);
-        backPanel.position.set(0, 0.28, -0.04);
-        scene.add(backPanel);
-
-        // Front rail (fallboard edge)
-        const frontRail = new THREE.Mesh(new THREE.BoxGeometry(bodyW, 0.055, 0.07), lacquer);
-        frontRail.position.set(0, 0.028, WKD + 0.08);
-        scene.add(frontRail);
-
-        // Side cheeks
-        const cheekGeo = new THREE.BoxGeometry(0.08, 0.55, WKD + 0.5);
-        const leftCheek = new THREE.Mesh(cheekGeo, lacquer);
-        leftCheek.position.set(OFFSET_X - 0.22, 0.28, WKD / 2 + 0.05);
-        scene.add(leftCheek);
-        const rightCheek = new THREE.Mesh(cheekGeo, lacquer);
-        rightCheek.position.set(-OFFSET_X + 0.22, 0.28, WKD / 2 + 0.05);
-        scene.add(rightCheek);
+        // ── Grand piano body ────────────────────────────────────────────────
+        buildGrandPianoBody(scene);
 
         // ── Keys ────────────────────────────────────────────────────────────
         const whiteMat = new THREE.MeshStandardMaterial({
@@ -190,25 +315,17 @@ export default function Piano3D({
         keyMeshesRef.current = keyMeshes;
 
         // ── Note pool ───────────────────────────────────────────────────────
-        const noteGeo = new THREE.BoxGeometry(1, 1, 1); // scaled per note
-
+        const noteGeo = new THREE.BoxGeometry(1, 1, 1);
+        const mkMat = (color, ei, op) => new THREE.MeshStandardMaterial({
+            color, emissive: color, emissiveIntensity: ei,
+            transparent: true, opacity: op, roughness: 0.3, metalness: 0.05,
+            depthWrite: false,
+        });
         const noteMats = {
-            rightActive: new THREE.MeshStandardMaterial({
-                color: 0xC9A96E, emissive: 0xC9A96E, emissiveIntensity: 0.55,
-                transparent: true, opacity: 0.93, roughness: 0.35, metalness: 0.05,
-            }),
-            rightIdle: new THREE.MeshStandardMaterial({
-                color: 0xC9A96E, emissive: 0xC9A96E, emissiveIntensity: 0.2,
-                transparent: true, opacity: 0.72, roughness: 0.35, metalness: 0.05,
-            }),
-            leftActive: new THREE.MeshStandardMaterial({
-                color: 0x8B9DC3, emissive: 0x8B9DC3, emissiveIntensity: 0.55,
-                transparent: true, opacity: 0.93, roughness: 0.35, metalness: 0.05,
-            }),
-            leftIdle: new THREE.MeshStandardMaterial({
-                color: 0x8B9DC3, emissive: 0x8B9DC3, emissiveIntensity: 0.2,
-                transparent: true, opacity: 0.72, roughness: 0.35, metalness: 0.05,
-            }),
+            rightActive: mkMat(0xC9A96E, 0.6, 0.92),
+            rightIdle: mkMat(0xC9A96E, 0.18, 0.68),
+            leftActive: mkMat(0x8B9DC3, 0.6, 0.92),
+            leftIdle: mkMat(0x8B9DC3, 0.18, 0.68),
         };
         noteMatRef.current = noteMats;
 
@@ -233,7 +350,7 @@ export default function Piano3D({
             const nMeshes = noteMeshesRef.current;
             const mats = noteMatRef.current;
 
-            // ── Update keys ────────────────────────────────────────────────
+            // ── Update keys ─────────────────────────────────────────────────
             const activeSet = new Map();
             aNotes.forEach((_, midi) => activeSet.set(midi, { source: 'user' }));
             sNotes.forEach(n => {
@@ -273,23 +390,23 @@ export default function Piano3D({
                 }
             }
 
-            // ── Update notes ───────────────────────────────────────────────
+            // ── Update notes ────────────────────────────────────────────────
             for (const m of nMeshes) m.visible = false;
             let ni = 0;
 
             for (const note of vNotes) {
                 if (ni >= NOTE_POOL) break;
                 const dt = note.time - cTime;
-                if (dt > LOOK_AHEAD || dt + note.duration < -0.08) continue;
+                if (dt > LOOK_AHEAD || dt + note.duration < -0.1) continue;
 
                 const black = isBlackKey(note.midi);
                 const wi = getWhiteKeyIndex(note.midi);
                 const noteX = black
                     ? OFFSET_X + wi * WKW
                     : OFFSET_X + wi * WKW + WKW / 2;
-                const noteW = black ? BKW * 0.8 : (WKW - 0.005) * 0.82;
-                const noteD = black ? BKD * 0.8 : WKD * 0.72;
-                const noteH = Math.max(note.duration * UPS, 0.04);
+                const noteW = black ? BKW * 0.78 : (WKW - 0.005) * 0.8;
+                const noteD = 0.12;
+                const noteH = Math.max(note.duration * UPS, 0.06);
                 const bottomY = KEY_TOP + dt * UPS;
                 const noteZ = black ? BKD / 2 : WKD / 2;
 
@@ -305,7 +422,7 @@ export default function Piano3D({
                 mesh.visible = true;
             }
 
-            // ── Camera transition ──────────────────────────────────────────
+            // ── Camera transition ───────────────────────────────────────────
             const tr = transitionRef.current;
             if (tr) {
                 const elapsed = Math.min((Date.now() - tr.t0) / tr.dur, 1);
@@ -321,21 +438,23 @@ export default function Piano3D({
 
         animate();
 
+        // ── Resize observer ─────────────────────────────────────────────────
+        const ro = new ResizeObserver(([entry]) => {
+            const { width: cw, height: ch } = entry.contentRect;
+            if (cw < 1 || ch < 1) return;
+            sizeRef.current = { w: cw, h: ch };
+            renderer.setSize(cw, ch);
+            camera.aspect = cw / ch;
+            camera.updateProjectionMatrix();
+        });
+        ro.observe(container);
+
         return () => {
+            ro.disconnect();
             cancelAnimationFrame(frameIdRef.current);
             renderer.dispose();
         };
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-    // ── Resize ──────────────────────────────────────────────────────────────
-    useEffect(() => {
-        const r = rendererRef.current;
-        const c = cameraRef.current;
-        if (!r || !c) return;
-        r.setSize(width, height);
-        c.aspect = width / height;
-        c.updateProjectionMatrix();
-    }, [width, height]);
 
     // ── Prop → ref sync ─────────────────────────────────────────────────────
     useEffect(() => { activeNotesRef.current = activeNotes; }, [activeNotes]);
@@ -343,8 +462,8 @@ export default function Piano3D({
     useEffect(() => { visibleNotesRef.current = visibleNotes; }, [visibleNotes]);
     useEffect(() => { currentTimeRef.current = currentTime; }, [currentTime]);
 
-    // ── Camera preset switch ─────────────────────────────────────────────────
-    const switchPreset = (idx) => {
+    // ── Camera preset switch ────────────────────────────────────────────────
+    const switchPreset = useCallback((idx) => {
         const cam = cameraRef.current;
         if (!cam) return;
         const p = PRESETS[idx];
@@ -354,13 +473,16 @@ export default function Piano3D({
             toPos: p.pos.clone(),
             toLook: p.target.clone(),
             t0: Date.now(),
-            dur: 650,
+            dur: 700,
         };
         setPresetIdx(idx);
-    };
+    }, []);
 
     return (
-        <div className={styles.container}>
+        <div
+            ref={containerRef}
+            className={`${styles.container} ${fullHeight ? styles.fullHeight : ''}`}
+        >
             <canvas ref={canvasRef} className={styles.canvas} />
             <div className={styles.camControls}>
                 {PRESETS.map((p, i) => (

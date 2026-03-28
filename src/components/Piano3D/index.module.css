@@ -1,40 +1,46 @@
 .container {
     position: relative;
-    width: 100%;
     overflow: hidden;
-    flex-shrink: 0;
-    background: #0A0A0B;
+    background: #06060A;
 }
 
-/* Three.js controls the canvas pixel dimensions via renderer.setSize() */
+/* Fills the entire piano-section when fullHeight is set */
+.fullHeight {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+}
+
 .canvas {
     display: block;
+    width: 100%;
+    height: 100%;
 }
 
 /* Camera preset buttons — bottom-right overlay */
 .camControls {
     position: absolute;
-    bottom: 8px;
-    right: 10px;
+    bottom: 12px;
+    right: 14px;
     display: flex;
-    gap: 4px;
+    gap: 5px;
     z-index: 2;
 }
 
 .camBtn {
-    padding: 3px 9px;
+    padding: 4px 11px;
     font-family: 'Inter', sans-serif;
     font-size: 10px;
     font-weight: 500;
     letter-spacing: 0.5px;
-    background: rgba(14, 14, 16, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(10, 10, 14, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.07);
     color: #555558;
     border-radius: 5px;
     cursor: pointer;
     transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
 }
 
 .camBtn:hover {
