@@ -35,8 +35,8 @@ const PRESETS = [
     },
     {
         name: 'Player',
-        pos: new THREE.Vector3(0, 3.5, 9),
-        target: new THREE.Vector3(0, 1.0, -1),
+        pos: new THREE.Vector3(0, 1.8, 6.5),
+        target: new THREE.Vector3(0, 0.15, 0.6),
     },
 ];
 
@@ -53,7 +53,7 @@ function easeInOut(t) {
 function buildScene(scene) {
     const bodyW = PIANO_W + 0.5;
     const bodyD = 6.5;
-    const rimH = 0.30;
+    const rimH = 0.20;  // must stay below black key top (0.26) so keys are visible
     const hw = bodyW / 2;
 
     // Shape-space Y values (→ negated world Z after rotateX(-PI/2))
