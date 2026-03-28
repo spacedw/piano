@@ -546,63 +546,67 @@ function App() {
       {/* Main content */}
       <main className="app-main" ref={mainRef}>
         <div className="piano-section">
-          <div className="waterfall-area" ref={waterfallRef}>
-            {song.song ? (
-              <>
-                <Waterfall
-                  visibleNotes={visibleNotes} currentTime={song.currentTime}
-                  width={pianoWidth} height={waterfallHeight}
-                  activeNotes={midi.activeNotes}
-                  loopEnabled={loopEnabled} loopStart={loopStart} loopEnd={loopEnd}
-                  isWaiting={isWaiting}
-                />
-                <ScoreOverlay lastScore={lastScore} />
-              </>
-            ) : (
-              <div className="empty-state">
-                <div className="empty-state-icon">♪</div>
-                <div className="empty-state-text">Load a MIDI file to begin</div>
-                <div className="empty-state-hint">Drag & drop a .mid file, click Open, or browse your Library</div>
-              </div>
-            )}
-            {song.song && (
-              <PracticePanel
-                song={song.song}
-                waitMode={waitMode} onWaitModeChange={setWaitMode} isWaiting={isWaiting}
-                handMode={handMode} onHandModeChange={setHandMode}
-                speed={song.speed} onSpeedChange={song.setSpeed}
-                loopEnabled={loopEnabled} loopStart={loopStart} loopEnd={loopEnd}
-                onLoopChange={handleLoopChange} onLoopPointsChange={handleLoopPointsChange}
-                currentTime={song.currentTime} totalDuration={song.song.totalDuration}
-                metronomeEnabled={metronome.enabled} metronomeBpm={metronome.bpm}
-                metronomeCurrentBeat={metronome.currentBeat}
-                metronomeBeatsPerMeasure={metronome.beatsPerMeasure}
-                onMetronomeToggle={metronome.toggle} onMetronomeBpmChange={metronome.setBpm}
-                scoreStats={scoreStats}
-              />
-            )}
-          </div>
           {view3d ? (
+            /* ── 3D mode: Piano3D fills the entire piano-section ── */
             <Piano3D
               activeNotes={midi.activeNotes}
               songActiveNotes={songActiveNotes}
               visibleNotes={visibleNotes}
               currentTime={song.currentTime}
               width={pianoWidth}
-              height={240}
+              fullHeight
             />
           ) : (
-            <Piano activeNotes={midi.activeNotes} songActiveNotes={songActiveNotes}
-              width={pianoWidth} height={160} />
+            /* ── 2D mode: waterfall + piano + pedals ── */
+            <>
+              <div className="waterfall-area" ref={waterfallRef}>
+                {song.song ? (
+                  <>
+                    <Waterfall
+                      visibleNotes={visibleNotes} currentTime={song.currentTime}
+                      width={pianoWidth} height={waterfallHeight}
+                      activeNotes={midi.activeNotes}
+                      loopEnabled={loopEnabled} loopStart={loopStart} loopEnd={loopEnd}
+                      isWaiting={isWaiting}
+                    />
+                    <ScoreOverlay lastScore={lastScore} />
+                  </>
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-state-icon">♪</div>
+                    <div className="empty-state-text">Load a MIDI file to begin</div>
+                    <div className="empty-state-hint">Drag & drop a .mid file, click Open, or browse your Library</div>
+                  </div>
+                )}
+                {song.song && (
+                  <PracticePanel
+                    song={song.song}
+                    waitMode={waitMode} onWaitModeChange={setWaitMode} isWaiting={isWaiting}
+                    handMode={handMode} onHandModeChange={setHandMode}
+                    speed={song.speed} onSpeedChange={song.setSpeed}
+                    loopEnabled={loopEnabled} loopStart={loopStart} loopEnd={loopEnd}
+                    onLoopChange={handleLoopChange} onLoopPointsChange={handleLoopPointsChange}
+                    currentTime={song.currentTime} totalDuration={song.song.totalDuration}
+                    metronomeEnabled={metronome.enabled} metronomeBpm={metronome.bpm}
+                    metronomeCurrentBeat={metronome.currentBeat}
+                    metronomeBeatsPerMeasure={metronome.beatsPerMeasure}
+                    onMetronomeToggle={metronome.toggle} onMetronomeBpmChange={metronome.setBpm}
+                    scoreStats={scoreStats}
+                  />
+                )}
+              </div>
+              <Piano activeNotes={midi.activeNotes} songActiveNotes={songActiveNotes}
+                width={pianoWidth} height={160} />
+              <PedalMinimap
+                liveSustain={midi.sustainPedal}
+                liveSostenuto={midi.sostenutoPedal}
+                liveSoft={midi.softPedal}
+                playbackSustain={playbackPedals.sustain}
+                playbackSostenuto={playbackPedals.sostenuto}
+                playbackSoft={playbackPedals.soft}
+              />
+            </>
           )}
-          <PedalMinimap
-            liveSustain={midi.sustainPedal}
-            liveSostenuto={midi.sostenutoPedal}
-            liveSoft={midi.softPedal}
-            playbackSustain={playbackPedals.sustain}
-            playbackSostenuto={playbackPedals.sostenuto}
-            playbackSoft={playbackPedals.soft}
-          />
         </div>
         <PlaybackBar
           song={song.song} isPlaying={song.isPlaying} currentTime={song.currentTime}
