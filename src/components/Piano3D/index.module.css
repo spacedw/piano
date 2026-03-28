@@ -1,0 +1,50 @@
+.container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: #0A0A0B;
+}
+
+/* Three.js controls the canvas pixel dimensions via renderer.setSize() */
+.canvas {
+    display: block;
+}
+
+/* Camera preset buttons — bottom-right overlay */
+.camControls {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    display: flex;
+    gap: 4px;
+    z-index: 2;
+}
+
+.camBtn {
+    padding: 3px 9px;
+    font-family: 'Inter', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    background: rgba(14, 14, 16, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #555558;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.camBtn:hover {
+    color: #C9A96E;
+    border-color: rgba(201, 169, 110, 0.3);
+    background: rgba(201, 169, 110, 0.06);
+}
+
+.camBtn.active {
+    color: #C9A96E;
+    border-color: rgba(201, 169, 110, 0.45);
+    background: rgba(201, 169, 110, 0.1);
+}

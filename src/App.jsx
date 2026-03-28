@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import Piano from '@/components/Piano';
+import Piano3D from '@/components/Piano3D';
 import Waterfall from '@/components/Waterfall';
 import PlaybackBar from '@/components/Controls';
 import MidiStatus from '@/components/MidiStatus';
@@ -60,6 +61,9 @@ function App() {
 
   // Playback pedal state (from song/recording playback)
   const [playbackPedals, setPlaybackPedals] = useState({ sustain: false, sostenuto: false, soft: false });
+
+  // 3D piano view toggle
+  const [view3d, setView3d] = useState(false);
 
   const mainRef = useRef(null);
   const waterfallRef = useRef(null);
@@ -476,6 +480,23 @@ function App() {
 
           <div className="header-divider" />
 
+          {/* 3D view toggle */}
+          <button
+            className={`nav-btn${view3d ? ' nav-btn--active' : ''}`}
+            onClick={() => setView3d(v => !v)}
+            title={view3d ? 'Switch to 2D view' : 'Switch to 3D view'}
+            style={view3d ? { color: 'var(--gold)', borderColor: 'rgba(201,169,110,0.35)', background: 'rgba(201,169,110,0.07)' } : {}}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+            <span style={{ fontSize: '10px', marginLeft: '4px', letterSpacing: '0.5px', fontWeight: 500 }}>3D</span>
+          </button>
+
+          <div className="header-divider" />
+
           {/* Audio not ready indicator (shows after HMR or OAuth redirect) */}
           {audioInitialized && !audio.loaded && !audio.loading && (
             <button className="audio-resume-btn" onClick={audio.initAudio} title="Click to enable audio">
@@ -561,8 +582,19 @@ function App() {
               />
             )}
           </div>
-          <Piano activeNotes={midi.activeNotes} songActiveNotes={songActiveNotes}
-            width={pianoWidth} height={160} />
+          {view3d ? (
+            <Piano3D
+              activeNotes={midi.activeNotes}
+              songActiveNotes={songActiveNotes}
+              visibleNotes={visibleNotes}
+              currentTime={song.currentTime}
+              width={pianoWidth}
+              height={240}
+            />
+          ) : (
+            <Piano activeNotes={midi.activeNotes} songActiveNotes={songActiveNotes}
+              width={pianoWidth} height={160} />
+          )}
           <PedalMinimap
             liveSustain={midi.sustainPedal}
             liveSostenuto={midi.sostenutoPedal}
