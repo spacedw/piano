@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { useT } from '@/i18n';
 import Piano from '@/components/Piano';
 import Piano3D from '@/components/Piano3D';
 import Waterfall from '@/components/Waterfall';
@@ -10,6 +11,7 @@ import Library from '@/components/Library';
 import ProgressDashboard from '@/components/ProgressDashboard';
 import SettingsPanel from '@/components/SettingsPanel';
 import PedalMinimap from '@/components/PedalMinimap';
+import RecordingMiniPlayer from '@/components/RecordingMiniPlayer';
 import { useMidi } from '@/hooks/useMidi';
 import { useAudio } from '@/hooks/useAudio';
 import { useSong } from '@/hooks/useSong';
@@ -25,6 +27,7 @@ import { initSync, syncAll } from '@/engine/SyncEngine';
 import { useWakeLock } from '@/hooks/useWakeLock';
 
 function App() {
+  const t = useT();
   const { isSupporter, tier } = useUserTier();
   const midi = useMidi();
   const audio = useAudio();
@@ -58,6 +61,11 @@ function App() {
   const [isRecording, setIsRecording] = useState(false);
   const [currentSongId, setCurrentSongId] = useState(null);
   const [sessionStartTime, setSessionStartTime] = useState(null);
+
+  // Recording playback state (for mini-player)
+  const [recPlayback, setRecPlayback] = useState({
+    active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0,
+  });
 
   // Playback pedal state (from song/recording playback)
   const [playbackPedals, setPlaybackPedals] = useState({ sustain: false, sostenuto: false, soft: false });
@@ -272,6 +280,19 @@ function App() {
     return () => { window.removeEventListener('resize', handleResize); observer.disconnect(); };
   }, [audioInitialized]);
 
+  // Mutual exclusion: when song starts playing, stop recording playback
+  useEffect(() => {
+    if (song.isPlaying && recordingRef.current.isPlaying) {
+      recordingRef.current.stopPlayback();
+      audio.allNotesOff();
+      audio.setSustain(false);
+      audio.setSostenuto(false);
+      audio.setSoft(false);
+      setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+      setRecPlayback({ active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 });
+    }
+  }, [song.isPlaying]);
+
   // Animation loop
   useAnimationLoop((timestamp) => {
     const result = song.update(timestamp);
@@ -281,8 +302,9 @@ function App() {
     scoreEngineRef.current.checkTimeouts(3000);
 
     // Recording playback
-    if (recordingRef.current.isPlaying) {
-      const events = recordingRef.current.updatePlayback();
+    const rec = recordingRef.current;
+    if (rec.isPlaying) {
+      const events = rec.updatePlayback();
       events.forEach(evt => {
         if (evt.type === 'noteOn') audio.noteOn(evt.midi, evt.velocity);
         else if (evt.type === 'noteOff') audio.noteOff(evt.midi);
@@ -292,19 +314,51 @@ function App() {
           else if (evt.cc === 67) { audio.setSoft(evt.isOn); setPlaybackPedals(p => ({ ...p, soft: evt.isOn })); }
         }
       });
+
+      // Update mini-player state
+      setRecPlayback(prev => ({
+        ...prev,
+        active: rec.isPlaying,
+        paused: rec.isPaused,
+        progress: rec.progress,
+        currentTime: rec.currentTime,
+      }));
+    }
+
+    // Clean up when recording playback ended (naturally or externally)
+    if (!rec.isPlaying) {
+      setRecPlayback(prev => {
+        if (!prev.active) return prev; // already clean
+        audio.allNotesOff();
+        audio.setSustain(false);
+        audio.setSostenuto(false);
+        audio.setSoft(false);
+        setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+        return { active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 };
+      });
     }
   }, audioInitialized);
 
   // Library → load song from saved MIDI data
   const handleSelectSong = useCallback(async (songData) => {
     if (!songData.midiData) return;
+    // Stop any recording playback before loading a song
+    if (recordingRef.current.isPlaying) {
+      recordingRef.current.stopPlayback();
+      audio.allNotesOff();
+      audio.setSustain(false);
+      audio.setSostenuto(false);
+      audio.setSoft(false);
+      setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+      setRecPlayback({ active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 });
+    }
     const blob = new Blob([songData.midiData]);
     const file = new File([blob], songData.name + '.mid');
     await song.loadFile(file, songData.name);
     setCurrentSongId(songData.id);
     setShowLibrary(false);
     updateSongMeta(songData.id, { lastPlayedAt: Date.now() });
-  }, [song]);
+  }, [song, audio]);
 
   // Recording controls
   const toggleRecording = useCallback(() => {
@@ -326,10 +380,41 @@ function App() {
   }, [isRecording, currentSongId, song.song, scoreStats]);
 
   const handlePlayRecording = useCallback((rec) => {
+    // Mutual exclusion: stop any active MIDI song first
+    if (song.isPlaying) {
+      song.stop();
+    }
     recordingRef.current.loadData(rec);
     recordingRef.current.startPlayback();
+    setRecPlayback({
+      active: true, paused: false,
+      name: rec.songName || 'Recording',
+      progress: 0, currentTime: 0,
+      duration: rec.duration || 0,
+    });
     setShowProgress(false);
+  }, [song]);
+
+  // Recording mini-player controls
+  const handleRecPause = useCallback(() => {
+    recordingRef.current.pausePlayback();
+    setRecPlayback(prev => ({ ...prev, paused: true }));
   }, []);
+
+  const handleRecResume = useCallback(() => {
+    recordingRef.current.resumePlayback();
+    setRecPlayback(prev => ({ ...prev, paused: false }));
+  }, []);
+
+  const handleRecStop = useCallback(() => {
+    recordingRef.current.stopPlayback();
+    audio.allNotesOff();
+    audio.setSustain(false);
+    audio.setSostenuto(false);
+    audio.setSoft(false);
+    setPlaybackPedals({ sustain: false, sostenuto: false, soft: false });
+    setRecPlayback({ active: false, paused: false, name: '', progress: 0, currentTime: 0, duration: 0 });
+  }, [audio]);
 
   const handleSaveRecordingToLibrary = useCallback(async (rec) => {
     try {
@@ -426,12 +511,12 @@ function App() {
     return (
       <div className="audio-init-overlay">
         <h2>PIANO<span>APP</span></h2>
-        <p>Connect your MIDI piano and start playing. Load any MIDI file and learn your favorite songs with visual guides.</p>
+        <p>{t('app.startHint')}</p>
         <button className="audio-init-btn" onClick={handleInitAudio}>
-          {audio.loading ? 'Loading Piano...' : 'Start Playing'}
+          {audio.loading ? t('app.loadingPiano') : t('app.startPlaying')}
         </button>
         <p style={{ fontSize: '11px', color: '#555558', marginTop: '8px' }}>
-          Requires Chrome or Edge · MIDI device recommended
+          {t('app.browserHint')}
         </p>
       </div>
     );
@@ -447,13 +532,13 @@ function App() {
         </div>
         <div className="app-header-right">
           {/* Nav buttons */}
-          <button className="nav-btn" onClick={() => setShowLibrary(true)} title="Song Library">
+          <button className="nav-btn" onClick={() => setShowLibrary(true)} title={t('nav.library')}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M4 19.5A2.5 2.5 0 016.5 17H20" />
               <path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z" />
             </svg>
           </button>
-          <button className="nav-btn" onClick={() => setShowProgress(true)} title="Progress">
+          <button className="nav-btn" onClick={() => setShowProgress(true)} title={t('nav.progress')}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 20V10" /><path d="M12 20V4" /><path d="M6 20v-6" />
             </svg>
@@ -461,16 +546,16 @@ function App() {
           <button
             className={`nav-btn ${isRecording ? 'recording' : ''}`}
             onClick={toggleRecording}
-            title={isRecording ? 'Stop Recording' : 'Start Recording'}
+            title={isRecording ? t('nav.stopRecording') : t('nav.startRecording')}
           >
             <div className={`rec-dot ${isRecording ? 'active' : ''}`} />
           </button>
           {user ? (
-            <button className="nav-btn avatar-btn" onClick={() => setShowSettings(true)} title={`Account: ${user.email}`}>
+            <button className="nav-btn avatar-btn" onClick={() => setShowSettings(true)} title={t('nav.account', { email: user.email })}>
               <span className="header-avatar">{user.email?.[0]?.toUpperCase() || '?'}</span>
             </button>
           ) : (
-            <button className="nav-btn" onClick={() => setShowSettings(true)} title="Settings">
+            <button className="nav-btn" onClick={() => setShowSettings(true)} title={t('nav.settings')}>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="3" />
                 <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1.08-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1.08 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001.08 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1.08z" />
@@ -499,16 +584,16 @@ function App() {
 
           {/* Audio not ready indicator (shows after HMR or OAuth redirect) */}
           {audioInitialized && !audio.loaded && !audio.loading && (
-            <button className="audio-resume-btn" onClick={audio.initAudio} title="Click to enable audio">
+            <button className="audio-resume-btn" onClick={audio.initAudio} title={t('app.tapToEnableAudio')}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                 <polygon points="11,5 6,9 2,9 2,15 6,15 11,19" fill="currentColor" stroke="none" />
                 <line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" />
               </svg>
-              <span>Tap to enable audio</span>
+              <span>{t('app.tapToEnableAudio')}</span>
             </button>
           )}
           {audioInitialized && audio.loading && (
-            <span className="audio-loading-badge">Loading piano...</span>
+            <span className="audio-loading-badge">{t('app.loadingPianoBadge')}</span>
           )}
 
           {/* Volume */}
@@ -623,12 +708,25 @@ function App() {
         onPlayRecording={handlePlayRecording} onSaveToLibrary={handleSaveRecordingToLibrary} />
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} user={user} onUserChange={setUser} />
 
+      {/* Recording mini-player */}
+      <RecordingMiniPlayer
+        name={recPlayback.name}
+        progress={recPlayback.progress}
+        currentTime={recPlayback.currentTime}
+        duration={recPlayback.duration}
+        isPlaying={recPlayback.active}
+        isPaused={recPlayback.paused}
+        onPause={handleRecPause}
+        onResume={handleRecResume}
+        onStop={handleRecStop}
+      />
+
       {/* Drag overlay */}
       {isDragging && (
         <div className="drop-zone-active">
           <div className="drop-zone-content">
-            <span>Drop MIDI file here</span>
-            <small>.mid or .midi files — saves to library</small>
+            <span>{t('app.dropHint')}</span>
+            <small>{t('app.dropHintSub')}</small>
           </div>
         </div>
       )}

@@ -9,3 +9,12 @@
     display: block;
     width: 100%;
 }
+
+.fxCanvas {
+    display: block;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}

@@ -3,6 +3,7 @@ import { getAllSongs, saveSong, deleteSong, updateSongMeta } from '@/engine/Stor
 import { getCommunityFeed, saveCommunityToLibrary, rateSong, reportSong, getUser } from '@/engine/SupabaseClient';
 import { useUserTier } from '@/hooks/useUserTier';
 import CommunityUploadModal from '@/components/CommunityUploadModal';
+import { useT } from '@/i18n';
 import styles from './index.module.css';
 
 /**
@@ -28,8 +29,8 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
     const [ratingFor, setRatingFor] = useState(null);
     const [currentUser, setCurrentUser] = useState(null);
     const [savingId, setSavingId] = useState(null);
-
     const { isSupporter } = useUserTier();
+    const t = useT();
 
     useEffect(() => {
         getUser().then(setCurrentUser);
@@ -111,7 +112,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
     }, [loadSongs]);
 
     const handleSaveCommunityToLibrary = useCallback(async (song) => {
-        if (!currentUser) { showToast('Sign in to save songs to your library', 'err'); return; }
+        if (!currentUser) { showToast(t('library.signInToSave'), 'err'); return; }
         if (savingId === song.id) return;
         setSavingId(song.id);
         try {
@@ -127,7 +128,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                 trackCount: midi.tracks.filter(t => t.notes.length > 0).length,
                 midiData: buffer, source: 'community', communityId: song.id,
             });
-            showToast(`"${song.title}" saved to your Library!`);
+            showToast(t('library.savedToLibrary', { name: song.title }));
             loadSongs();
         } catch (err) {
             showToast(err.message || 'Error saving song', 'err');
@@ -161,10 +162,10 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
     }, [ratingFor, songs, onSelectSong, onClose, showToast]);
 
     const handleRate = useCallback(async (songId, stars) => {
-        if (!currentUser) { showToast('Sign in to rate songs', 'err'); setRatingFor(null); return; }
+        if (!currentUser) { showToast(t('library.signInToRate'), 'err'); setRatingFor(null); return; }
         try {
             await rateSong(songId, stars);
-            showToast(`Rated ${stars} ⭐`);
+            showToast(t('library.rated', { stars }));
             setRatingFor(null);
             loadCommunity();
         } catch (err) {
@@ -204,7 +205,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
             <div className={styles.libraryPanel} onClick={(e) => e.stopPropagation()}>
                 {/* Header */}
                 <div className={styles.libraryHeader}>
-                    <h2>Song Library</h2>
+                    <h2>{t('library.title')}</h2>
                     <div className={styles.libraryActions}>
                         <button className={`${styles.libBtn} ${styles.importBtn}`} onClick={handleImport}>
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -212,7 +213,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                                 <polyline points="7,10 12,15 17,10" />
                                 <line x1="12" y1="15" x2="12" y2="3" />
                             </svg>
-                            Import MIDI
+                            {t('library.importMidi')}
                         </button>
                         <button className={`${styles.libBtn} ${styles.closeBtn}`} onClick={onClose}>✕</button>
                     </div>
@@ -220,8 +221,8 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
 
                 {/* Tabs */}
                 <div className={styles.libraryTabs}>
-                    <button className={`${styles.tabBtn} ${activeTab === 'personal' ? styles.active : ''}`} onClick={() => setActiveTab('personal')}>My Library</button>
-                    <button className={`${styles.tabBtn} ${activeTab === 'community' ? styles.active : ''}`} onClick={() => setActiveTab('community')}>Community</button>
+                    <button className={`${styles.tabBtn} ${activeTab === 'personal' ? styles.active : ''}`} onClick={() => setActiveTab('personal')}>{t('library.myLibrary')}</button>
+                    <button className={`${styles.tabBtn} ${activeTab === 'community' ? styles.active : ''}`} onClick={() => setActiveTab('community')}>{t('library.community')}</button>
                 </div>
 
                 {/* Toolbar */}
@@ -232,7 +233,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                         </svg>
                         <input
                             type="text"
-                            placeholder={activeTab === 'personal' ? 'Search your songs...' : 'Search community...'}
+                            placeholder={activeTab === 'personal' ? t('library.searchPersonal') : t('library.searchCommunity')}
                             value={activeTab === 'personal' ? search : communityFilters.search}
                             onChange={(e) => {
                                 if (activeTab === 'personal') setSearch(e.target.value);
@@ -243,15 +244,15 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                     <div className={styles.toolbarGroup}>
                         {activeTab === 'personal' ? (
                             <select className={styles.sortSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-                                <option value="addedAt">Recent</option>
-                                <option value="name">Name</option>
-                                <option value="lastPlayedAt">Last Played</option>
-                                <option value="difficulty">Difficulty</option>
+                                <option value="addedAt">{t('library.sortRecent')}</option>
+                                <option value="name">{t('library.sortName')}</option>
+                                <option value="lastPlayedAt">{t('library.sortLastPlayed')}</option>
+                                <option value="difficulty">{t('library.sortDifficulty')}</option>
                             </select>
                         ) : (
                             <select className={styles.sortSelect} value={communitySort} onChange={(e) => setCommunitySort(e.target.value)}>
-                                <option value="popular">Popular</option>
-                                <option value="recent">Recent</option>
+                                <option value="popular">{t('library.sortPopular')}</option>
+                                <option value="recent">{t('library.sortRecent')}</option>
                             </select>
                         )}
                         <div className={styles.viewToggle}>
@@ -264,10 +265,10 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                 {/* Hint */}
                 <div className={styles.libraryHint}>
                     {activeTab === 'personal'
-                        ? '💡 Hover over a song and click ✎ to edit metadata'
+                        ? t('library.hintPersonal')
                         : currentUser
-                            ? '🌐 Click a song to play it · ↓ to save · ⭐ to rate'
-                            : '🌐 Sign in to upload, rate, and save community songs'}
+                            ? t('library.hintCommunity')
+                            : t('library.hintSignIn')}
                 </div>
 
                 {/* Toast */}
@@ -281,12 +282,12 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                 <div className={`${styles.libraryContent} ${viewMode === 'grid' ? styles.grid : styles.list}`}>
                     {activeTab === 'personal' ? (
                         loading ? (
-                            <div className={styles.libraryEmpty}>Loading...</div>
+                            <div className={styles.libraryEmpty}>{t('library.loading')}</div>
                         ) : filteredSongs.length === 0 ? (
                             <div className={styles.libraryEmpty}>
                                 <span className={styles.emptyIcon}>🎵</span>
-                                <span>No songs yet</span>
-                                <span className={styles.emptyHint}>Import MIDI files to build your library</span>
+                                <span>{t('library.noSongs')}</span>
+                                <span className={styles.emptyHint}>{t('library.noSongsHint')}</span>
                             </div>
                         ) : (
                             filteredSongs.map(song => (
@@ -301,7 +302,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                                                 <>
                                                     <input
                                                         className={`${styles.editableInput} ${styles.songName}`}
-                                                        value={editForm.name} placeholder="Song Title"
+                                                        value={editForm.name} placeholder={t('library.placeholderTitle')}
                                                         onChange={e => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                                                         onClick={e => e.stopPropagation()}
                                                         onKeyDown={e => {
@@ -312,7 +313,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                                                     />
                                                     <input
                                                         className={`${styles.editableInput} ${styles.songArtist}`}
-                                                        value={editForm.artist} placeholder="Artist"
+                                                        value={editForm.artist} placeholder={t('library.placeholderArtist')}
                                                         onChange={e => setEditForm(prev => ({ ...prev, artist: e.target.value }))}
                                                         onClick={e => e.stopPropagation()}
                                                         onKeyDown={e => {
@@ -323,9 +324,9 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                                                 </>
                                             ) : (
                                                 <>
-                                                    <span className={styles.songName} title={song.name}>{song.name || 'Untitled'}</span>
+                                                    <span className={styles.songName} title={song.name}>{song.name || t('library.untitled')}</span>
                                                     <span className={styles.songArtist} title={song.artist}>
-                                                        {song.artist || 'Unknown'}
+                                                        {song.artist || t('library.unknown')}
                                                         {song.source === 'community' && <span className={styles.sourceBadge}>🌐</span>}
                                                     </span>
                                                 </>
@@ -353,7 +354,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                                     <div className={styles.songMeta}>
                                         <span>{formatDuration(song.totalDuration)}</span>
                                         <span>{Math.round(song.bpm)} BPM</span>
-                                        <span>{song.noteCount} notes</span>
+                                        <span>{t('library.notes', { count: song.noteCount })}</span>
                                     </div>
 
                                     <div className={styles.songCardBottom}>
@@ -366,9 +367,9 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                                         >
                                             {difficultyStars(song.difficulty)}
                                         </div>
-                                        {song.bestScore > 0 && <span className={styles.songScore}>Best: {song.bestScore}%</span>}
-                                        <button className={styles.cloudBtn} onClick={e => { e.stopPropagation(); setUploadingSong(song); }} title="Submit to Community">☁️</button>
-                                        <button className={styles.deleteBtn} onClick={e => { e.stopPropagation(); handleDelete(song.id); }} title="Remove from library">
+                                        {song.bestScore > 0 && <span className={styles.songScore}>{t('library.best', { score: song.bestScore })}</span>}
+                                        <button className={styles.cloudBtn} onClick={e => { e.stopPropagation(); setUploadingSong(song); }} title={t('library.submitToCommunity')}>☁️</button>
+                                        <button className={styles.deleteBtn} onClick={e => { e.stopPropagation(); handleDelete(song.id); }} title={t('library.removeFromLibrary')}>
                                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                 <path d="M3 6.52381C3 6.12932 3.32671 5.80952 3.72973 5.80952H8.51787C8.52437 4.9683 8.61554 3.81504 9.45037 3.01668C10.1074 2.38839 11.0081 2 12 2C12.9919 2 13.8926 2.38839 14.5496 3.01668C15.3844 3.81504 15.4756 4.9683 15.4821 5.80952H20.2703C20.6733 5.80952 21 6.12932 21 6.52381C21 6.9183 20.6733 7.2381 20.2703 7.2381H3.72973C3.32671 7.2381 3 6.9183 3 6.52381Z" fill="currentColor" />
                                                 <path fillRule="evenodd" clipRule="evenodd" d="M11.5956 22H12.4044C15.1871 22 16.5785 22 17.4831 21.1141C18.3878 20.2281 18.4803 18.7749 18.6654 15.8685L18.9321 11.6806C19.0326 10.1036 19.0828 9.31511 18.6289 8.81545C18.1751 8.31579 17.4087 8.31579 15.876 8.31579H8.12404C6.59127 8.31579 5.82488 8.31579 5.37105 8.81545C4.91722 9.31511 4.96744 10.1036 5.06788 11.6806L5.33459 15.8685C5.5197 18.7749 5.61225 20.2281 6.51689 21.1141C7.42153 22 8.81289 22 11.5956 22Z" fill="currentColor" />
@@ -380,11 +381,11 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                         )
                     ) : (
                         loadingCommunity ? (
-                            <div className={styles.libraryEmpty}>Loading community...</div>
+                            <div className={styles.libraryEmpty}>{t('library.loadingCommunity')}</div>
                         ) : communitySongs.length === 0 ? (
                             <div className={styles.libraryEmpty}>
                                 <span className={styles.emptyIcon}>🌐</span>
-                                <span>No community songs found</span>
+                                <span>{t('library.noCommunity')}</span>
                             </div>
                         ) : (
                             communitySongs.map(song => (
@@ -420,14 +421,14 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
                                         </div>
                                     </div>
                                     <div className={styles.songMeta}>
-                                        <span>{song.genre || 'Various'}</span>
-                                        <span>Level: {song.difficulty || 0}</span>
+                                        <span>{song.genre || t('library.various')}</span>
+                                        <span>{t('library.levelLabel', { level: song.difficulty || 0 })}</span>
                                     </div>
                                     <div className={styles.songCardBottom}>
-                                        <span className={styles.songScore}>▶ {song.play_count || 0} plays</span>
+                                        <span className={styles.songScore}>{t('library.plays', { count: song.play_count || 0 })}</span>
                                         <button className={styles.reportBtn} onClick={e => {
                                             e.stopPropagation();
-                                            const reason = prompt('Reason for reporting?');
+                                            const reason = prompt(t('library.reportReason'));
                                             if (reason) reportSong(song.id, reason);
                                         }}>⚑</button>
                                     </div>
@@ -439,7 +440,7 @@ export default function Library({ isOpen, onClose, onSelectSong, currentSongId }
 
                 {/* Footer */}
                 <div className={styles.libraryFooter}>
-                    <span>{activeTab === 'personal' ? filteredSongs.length : communitySongs.length} songs</span>
+                    <span>{activeTab === 'personal' ? t('library.songCount', { count: filteredSongs.length }) : t('library.songCount', { count: communitySongs.length })}</span>
                 </div>
             </div>
 

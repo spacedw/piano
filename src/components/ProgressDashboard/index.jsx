@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getProgressStats, getAllRecordings, deleteRecording, updateRecordingMeta } from '@/engine/Storage';
+import { useT } from '@/i18n';
 import styles from './index.module.css';
 
 /**
@@ -12,6 +13,7 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
     const [loading, setLoading] = useState(false);
     const [editingRecId, setEditingRecId] = useState(null);
     const [editRecName, setEditRecName] = useState('');
+    const t = useT();
 
     const loadData = useCallback(async () => {
         setLoading(true);
@@ -61,7 +63,7 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
         <div className={styles.progressOverlay} onClick={onClose}>
             <div className={styles.progressPanel} onClick={(e) => e.stopPropagation()}>
                 <div className={styles.progressHeader}>
-                    <h2>Your Progress</h2>
+                    <h2>{t('progress.title')}</h2>
                     <button className={styles.closeBtn} onClick={onClose}>✕</button>
                 </div>
 
@@ -69,58 +71,58 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
                     <button
                         className={activeTab === 'stats' ? styles.active : ''}
                         onClick={() => setActiveTab('stats')}
-                    >Statistics</button>
+                    >{t('progress.statistics')}</button>
                     <button
                         className={activeTab === 'recordings' ? styles.active : ''}
                         onClick={() => setActiveTab('recordings')}
-                    >Recordings</button>
+                    >{t('progress.recordings')}</button>
                 </div>
 
                 <div className={styles.progressContent}>
                     {loading ? (
-                        <div className={styles.progressEmpty}>Loading...</div>
+                        <div className={styles.progressEmpty}>{t('progress.loading')}</div>
                     ) : activeTab === 'stats' ? (
                         stats ? (
                             <>
                                 <div className={styles.statCards}>
                                     <div className={styles.statCard}>
                                         <span className={styles.statValue}>{formatTime(stats.todayTime)}</span>
-                                        <span className={styles.statLabel}>Today</span>
+                                        <span className={styles.statLabel}>{t('progress.today')}</span>
                                     </div>
                                     <div className={styles.statCard}>
                                         <span className={styles.statValue}>{formatTime(stats.weekTime)}</span>
-                                        <span className={styles.statLabel}>This Week</span>
+                                        <span className={styles.statLabel}>{t('progress.thisWeek')}</span>
                                     </div>
                                     <div className={styles.statCard}>
                                         <span className={styles.statValue}>{formatTime(stats.totalTime)}</span>
-                                        <span className={styles.statLabel}>Total</span>
+                                        <span className={styles.statLabel}>{t('progress.total')}</span>
                                     </div>
                                     <div className={`${styles.statCard} ${styles.accent}`}>
                                         <span className={styles.statValue}>{stats.streak}</span>
-                                        <span className={styles.statLabel}>Day Streak 🔥</span>
+                                        <span className={styles.statLabel}>{t('progress.dayStreak')}</span>
                                     </div>
                                 </div>
 
                                 <div className={styles.statSection}>
-                                    <h3>Performance</h3>
+                                    <h3>{t('progress.performance')}</h3>
                                     <div className={styles.statRow}>
                                         <div className={styles.statMini}>
-                                            <span className={styles.miniLabel}>Sessions</span>
+                                            <span className={styles.miniLabel}>{t('progress.sessions')}</span>
                                             <span className={styles.miniValue}>{stats.totalSessions}</span>
                                         </div>
                                         <div className={styles.statMini}>
-                                            <span className={styles.miniLabel}>Avg Score</span>
+                                            <span className={styles.miniLabel}>{t('progress.avgScore')}</span>
                                             <span className={styles.miniValue}>{stats.avgScore}%</span>
                                         </div>
                                         <div className={styles.statMini}>
-                                            <span className={styles.miniLabel}>Best Score</span>
+                                            <span className={styles.miniLabel}>{t('progress.bestScore')}</span>
                                             <span className={`${styles.miniValue} ${styles.gold}`}>{stats.bestScore}%</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className={styles.statSection}>
-                                    <h3>Activity (Last 90 days)</h3>
+                                    <h3>{t('progress.activity')}</h3>
                                     <div className={styles.heatmap}>
                                         {Object.entries(stats.heatmap)
                                             .sort(([a], [b]) => a.localeCompare(b))
@@ -140,26 +142,26 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
                                             })}
                                     </div>
                                     <div className={styles.heatmapLegend}>
-                                        <span>Less</span>
+                                        <span>{t('progress.less')}</span>
                                         <div className={`${styles.heatmapCell} ${styles.level0}`} />
                                         <div className={`${styles.heatmapCell} ${styles.level1}`} />
                                         <div className={`${styles.heatmapCell} ${styles.level2}`} />
                                         <div className={`${styles.heatmapCell} ${styles.level3}`} />
                                         <div className={`${styles.heatmapCell} ${styles.level4}`} />
-                                        <span>More</span>
+                                        <span>{t('progress.more')}</span>
                                     </div>
                                 </div>
 
                                 <div className={styles.statSection}>
-                                    <h3>Recent Sessions</h3>
+                                    <h3>{t('progress.recentSessions')}</h3>
                                     {stats.recentSessions.length === 0 ? (
-                                        <div className={`${styles.progressEmpty} ${styles.small}`}>No sessions yet</div>
+                                        <div className={`${styles.progressEmpty} ${styles.small}`}>{t('progress.noSessions')}</div>
                                     ) : (
                                         <div className={styles.sessionList}>
                                             {stats.recentSessions.map(s => (
                                                 <div key={s.id} className={styles.sessionItem}>
                                                     <div className={styles.sessionInfo}>
-                                                        <span className={styles.sessionSong}>{s.songName || 'Free Play'}</span>
+                                                        <span className={styles.sessionSong}>{s.songName || t('progress.freePlay')}</span>
                                                         <span className={styles.sessionDate}>{formatDate(s.date)}</span>
                                                     </div>
                                                     <div className={styles.sessionStats}>
@@ -173,13 +175,13 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
                                 </div>
                             </>
                         ) : (
-                            <div className={styles.progressEmpty}>No data yet. Start practicing!</div>
+                            <div className={styles.progressEmpty}>{t('progress.noData')}</div>
                         )
                     ) : (
                         recordings.length === 0 ? (
                             <div className={styles.progressEmpty}>
-                                <span>No recordings yet</span>
-                                <span className={styles.emptyHint}>Press the record button while playing to capture your performance</span>
+                                <span>{t('progress.noRecordings')}</span>
+                                <span className={styles.emptyHint}>{t('progress.noRecordingsHint')}</span>
                             </div>
                         ) : (
                             <div className={styles.recordingList}>
@@ -202,7 +204,7 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
                                                 <span
                                                     className={styles.recordingName}
                                                     onClick={() => { setEditingRecId(rec.id); setEditRecName(rec.songName || ''); }}
-                                                    title="Click to rename"
+                                                    title={t('progress.playRecording')}
                                                 >
                                                     {rec.songName}
                                                     <span className={styles.editHint}>✎</span>
@@ -212,23 +214,23 @@ export default function ProgressDashboard({ isOpen, onClose, onPlayRecording, on
                                         </div>
                                         <div className={styles.recordingMeta}>
                                             <span>{formatTime(rec.duration)}</span>
-                                            <span>{rec.events.length} events</span>
+                                                <span>{t('progress.events', { count: rec.events.length })}</span>
                                         </div>
                                         <div className={styles.recordingActions}>
                                             <button
                                                 className={styles.recPlayBtn}
                                                 onClick={() => onPlayRecording(rec)}
-                                                title="Play recording"
+                                                title={t('progress.playRecording')}
                                             >▶</button>
                                             <button
                                                 className={styles.recSaveBtn}
                                                 onClick={() => onSaveToLibrary(rec)}
-                                                title="Save to Library as MIDI"
+                                                title={t('progress.saveToLibrary')}
                                             >📥</button>
                                             <button
                                                 className={styles.recDeleteBtn}
                                                 onClick={() => handleDeleteRecording(rec.id)}
-                                                title="Delete"
+                                                title={t('progress.deleteRecording')}
                                             >🗑</button>
                                         </div>
                                     </div>
