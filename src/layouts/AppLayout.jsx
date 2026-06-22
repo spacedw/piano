@@ -50,14 +50,17 @@ export default function AppLayout() {
     getSetting('notation', 'solfege').then(setNotation);
   }, []);
 
-  // Listen for notation changes from settings panel
+  // Listen for settings changes from settings panel
   useEffect(() => {
-    const handleStorage = () => {
-      getSetting('notation', 'solfege').then(setNotation);
+    const handleSettingsChanged = (e) => {
+      const { key, value } = e.detail || {};
+      if (key === 'notation') getSetting('notation', 'solfege').then(setNotation);
+      if (key === 'mute') audio.setMute(value);
+      if (key === 'volume') audio.setVolume(value / 100);
     };
-    window.addEventListener('settings-changed', handleStorage);
-    return () => window.removeEventListener('settings-changed', handleStorage);
-  }, []);
+    window.addEventListener('settings-changed', handleSettingsChanged);
+    return () => window.removeEventListener('settings-changed', handleSettingsChanged);
+  }, [audio]);
 
   // UI
   const [showSettings, setShowSettings] = useState(false);

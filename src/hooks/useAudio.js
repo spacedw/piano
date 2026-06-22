@@ -94,8 +94,8 @@ export function useAudio(presetId = DEFAULT_PRESET) {
         }
     }, [loading, volume, currentPresetId, preset.baseUrl, preset.loaded, sampleMap]);
 
-    // Switch preset at runtime
-    const switchPreset = useCallback((newPresetId) => {
+    // Switch preset at runtime — disposes old sampler and inits new one immediately
+    const switchPreset = useCallback(async (newPresetId) => {
         const target = PIANO_PRESETS[newPresetId];
         if (!target) {
             console.warn(`[useAudio] Unknown preset: ${newPresetId}`);
@@ -103,19 +103,64 @@ export function useAudio(presetId = DEFAULT_PRESET) {
         }
         if (!target.loaded) {
             console.log(`[useAudio] Preset "${newPresetId}" not available locally.`);
-            // Still update the ID so UI reflects selection; audio won't init until loaded
             setCurrentPresetId(newPresetId);
             setLoaded(false);
             return;
         }
-        // Dispose old sampler and reload
+
+        // Dispose old sampler
         if (samplerRef.current) {
             samplerRef.current.dispose();
             samplerRef.current = null;
         }
+
         setLoaded(false);
+        setLoading(true);
         setCurrentPresetId(newPresetId);
-        // initAudio will be triggered by effect or caller
+
+        try {
+            const T = toneRef.current || await getTone();
+            toneRef.current = T;
+
+            const targetMap = target.sampleMapKey === 'flat' ? SAMPLE_MAP_FLAT : SAMPLE_MAP;
+
+            // Ensure volume node exists (may not if audio was never init'd)
+            if (!volumeNodeRef.current) {
+                const vol = new T.Volume(T.gainToDb(0.8)).toDestination();
+                volumeNodeRef.current = vol;
+            }
+
+            const newSampler = new T.Sampler({
+                urls: targetMap,
+                baseUrl: target.baseUrl,
+                release: 1.5,
+                onload: () => {
+                    if (samplerRef.current === newSampler) {
+                        setLoaded(true);
+                        setLoading(false);
+                    }
+                },
+                onerror: () => {
+                    if (samplerRef.current === newSampler) {
+                        setLoaded(true);
+                        setLoading(false);
+                    }
+                },
+            }).connect(volumeNodeRef.current);
+
+            samplerRef.current = newSampler;
+
+            // Safety timeout
+            setTimeout(() => {
+                if (samplerRef.current === newSampler) {
+                    setLoaded(true);
+                    setLoading(false);
+                }
+            }, 20_000);
+        } catch (err) {
+            console.error('[useAudio] Preset switch error:', err);
+            setLoading(false);
+        }
     }, []);
 
     // Play a note
@@ -268,6 +313,15 @@ export function useAudio(presetId = DEFAULT_PRESET) {
         });
     }, [volume]);
 
+    // Mute setter (direct boolean, for settings panel)
+    const setMute = useCallback((value) => {
+        const T = toneRef.current;
+        setMuted(value);
+        if (volumeNodeRef.current && T) {
+            volumeNodeRef.current.volume.value = value ? -Infinity : T.gainToDb(volume);
+        }
+    }, [volume]);
+
     // Cleanup
     useEffect(() => {
         return () => {
@@ -288,6 +342,7 @@ export function useAudio(presetId = DEFAULT_PRESET) {
         allNotesOff,
         setVolume,
         toggleMute,
+        setMute,
         setSustain,
         setSostenuto,
         setSoft,
