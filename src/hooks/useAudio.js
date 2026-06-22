@@ -69,25 +69,15 @@ export function useAudio(presetId = DEFAULT_PRESET) {
                 urls: sampleMap,
                 baseUrl: preset.baseUrl,
                 release: 1.5,
-                onload: () => {
-                    setLoaded(true);
-                    setLoading(false);
-                },
-                onerror: (err) => {
-                    console.error('Sampler load error:', err);
-                    setLoading(false);
-                    setLoaded(true); // graceful: seguir funcionando aunque fallen algunos samples
-                },
+                onload: () => { /* samples fully buffered — already marked loaded */ },
+                onerror: () => { /* non-fatal: Tone.js interpolates from nearby samples */ },
             }).connect(vol);
 
             samplerRef.current = sampler;
 
-            // Timeout de seguridad: si los samples no cargan en 20s, liberar el bloqueo
-            setTimeout(() => {
-                if (!samplerRef.current) return;
-                setLoaded(true);
-                setLoading(false);
-            }, 20_000);
+            // Unlock immediately — Tone.js plays nearest available sample while others load
+            setLoaded(true);
+            setLoading(false);
         } catch (err) {
             console.error('Audio init error:', err);
             setLoading(false);
@@ -134,29 +124,15 @@ export function useAudio(presetId = DEFAULT_PRESET) {
                 urls: targetMap,
                 baseUrl: target.baseUrl,
                 release: 1.5,
-                onload: () => {
-                    if (samplerRef.current === newSampler) {
-                        setLoaded(true);
-                        setLoading(false);
-                    }
-                },
-                onerror: () => {
-                    if (samplerRef.current === newSampler) {
-                        setLoaded(true);
-                        setLoading(false);
-                    }
-                },
+                onload: () => { /* fully buffered */ },
+                onerror: () => { /* non-fatal */ },
             }).connect(volumeNodeRef.current);
 
             samplerRef.current = newSampler;
 
-            // Safety timeout
-            setTimeout(() => {
-                if (samplerRef.current === newSampler) {
-                    setLoaded(true);
-                    setLoading(false);
-                }
-            }, 20_000);
+            // Unlock immediately
+            setLoaded(true);
+            setLoading(false);
         } catch (err) {
             console.error('[useAudio] Preset switch error:', err);
             setLoading(false);
