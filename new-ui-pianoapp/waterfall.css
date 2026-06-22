@@ -1,0 +1,127 @@
+/* ============================================================
+   Waterfall lane styles
+   ============================================================ */
+
+.waterfall {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 100%, rgba(201,169,110,0.06), transparent 70%),
+    linear-gradient(180deg, #07070A 0%, #0B0B10 60%, #0F0F15 100%);
+}
+
+.wf-grid {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+.wf-grid-line {
+  position: absolute; top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(255,255,255,0.025);
+}
+.wf-grid-c {
+  background: rgba(201,169,110,0.06);
+}
+
+.wf-beats {
+  position: absolute; inset: 0;
+  pointer-events: none;
+}
+.wf-beat-line {
+  position: absolute; left: 0; right: 0;
+  height: 1px;
+  background: rgba(255,255,255,0.025);
+}
+
+.wf-notes {
+  position: absolute; inset: 0;
+}
+
+.wf-note {
+  position: absolute;
+  border-radius: 4px 4px 1px 1px;
+  pointer-events: none;
+  transition: filter 80ms ease;
+}
+.wf-note-r {
+  background:
+    linear-gradient(180deg, var(--gold-50) 0%, var(--gold) 70%, var(--gold-600) 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.4) inset,
+    0 -2px 8px -2px rgba(0,0,0,0.4) inset,
+    0 0 12px -2px var(--gold-glow);
+}
+.wf-note-l {
+  background:
+    linear-gradient(180deg, #C9D6E8 0%, #8FA5C2 70%, #5C7396 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.3) inset,
+    0 -2px 8px -2px rgba(0,0,0,0.4) inset,
+    0 0 10px -2px rgba(143, 165, 194, 0.3);
+}
+.wf-note-blk {
+  filter: brightness(0.85);
+}
+.wf-note-now {
+  filter: brightness(1.15) saturate(1.2);
+}
+.wf-note-now::after {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  box-shadow: 0 0 24px 2px var(--gold-glow);
+  pointer-events: none;
+}
+
+.wf-note-glow {
+  position: absolute;
+  bottom: -2px; left: 0; right: 0; height: 8px;
+  background: linear-gradient(180deg, transparent, var(--gold-100));
+  filter: blur(4px);
+}
+
+.wf-strike {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  height: 60px;
+  pointer-events: none;
+  z-index: 3;
+}
+.wf-strike-line {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+  box-shadow: 0 0 16px 2px var(--gold-glow);
+  opacity: 0.85;
+}
+.wf-strike-fade {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 60px;
+  background: linear-gradient(180deg, transparent, rgba(201,169,110,0.06) 60%, rgba(201,169,110,0.12));
+}
+
+.wf-sparks { position: absolute; inset: 0; pointer-events: none; }
+.wf-spark-cluster {
+  position: absolute;
+  width: 2px; height: 2px;
+}
+.wf-spark {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 4px; height: 4px;
+  background: var(--gold-100);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--gold);
+  animation: spark 700ms var(--ease-out) forwards;
+}
+.wf-spark-core {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 24px; height: 24px;
+  margin: -12px;
+  background: radial-gradient(circle, var(--gold-50), transparent 70%);
+  border-radius: 50%;
+  animation: spark 500ms ease-out forwards;
+  --dx: 0; --dy: 0;
+}

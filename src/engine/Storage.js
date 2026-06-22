@@ -247,6 +247,36 @@ export async function getProgressStats() {
         }
     });
 
+    // Score history: average score per day for last 14 days
+    const scoreHistory = [];
+    for (let i = 13; i >= 0; i--) {
+        const d = new Date(now - i * 24 * 60 * 60 * 1000);
+        const key = d.toISOString().split('T')[0];
+        const daySessions = sessions.filter(s => new Date(s.date).toISOString().split('T')[0] === key && s.score > 0);
+        if (daySessions.length > 0) {
+            scoreHistory.push(Math.round(daySessions.reduce((sum, s) => sum + s.score, 0) / daySessions.length));
+        } else {
+            scoreHistory.push(scoreHistory.length > 0 ? scoreHistory[scoreHistory.length - 1] : 0);
+        }
+    }
+
+    // Top scores: best score per song
+    const songBest = {};
+    sessions.forEach(s => {
+        if (s.score > 0 && s.songName) {
+            if (!songBest[s.songName] || s.score > songBest[s.songName].score) {
+                songBest[s.songName] = { song: s.songName, artist: '', score: s.score };
+            }
+        }
+    });
+    const topScores = Object.values(songBest)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, 5)
+        .map((r, i) => ({ ...r, rank: i + 1 }));
+
+    // Total notes played
+    const totalNotesPlayed = sessions.reduce((sum, s) => sum + (s.notesHit || 0), 0);
+
     return {
         totalSessions: sessions.length,
         totalTime,
@@ -260,6 +290,9 @@ export async function getProgressStats() {
             ? Math.max(...sessions.map(s => s.score || 0))
             : 0,
         heatmap,
+        scoreHistory,
+        topScores,
+        totalNotesPlayed,
         recentSessions: sessions.sort((a, b) => b.date - a.date).slice(0, 20),
     };
 }

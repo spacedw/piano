@@ -1,19 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-
-// Salamander Grand Piano samples via unpkg CDN (free, high quality)
-const SAMPLE_BASE_URL = 'https://tonejs.github.io/audio/salamander/';
+import { PIANO_PRESETS, DEFAULT_PRESET, SAMPLE_MAP, SAMPLE_MAP_FLAT } from '@/constants/pianoPresets';
 
 // We load a subset of notes and let Tone.js interpolate the rest
-const SAMPLE_MAP = {
-    A0: 'A0.mp3', C1: 'C1.mp3', 'D#1': 'Ds1.mp3', 'F#1': 'Fs1.mp3',
-    A1: 'A1.mp3', C2: 'C2.mp3', 'D#2': 'Ds2.mp3', 'F#2': 'Fs2.mp3',
-    A2: 'A2.mp3', C3: 'C3.mp3', 'D#3': 'Ds3.mp3', 'F#3': 'Fs3.mp3',
-    A3: 'A3.mp3', C4: 'C4.mp3', 'D#4': 'Ds4.mp3', 'F#4': 'Fs4.mp3',
-    A4: 'A4.mp3', C5: 'C5.mp3', 'D#5': 'Ds5.mp3', 'F#5': 'Fs5.mp3',
-    A5: 'A5.mp3', C6: 'C6.mp3', 'D#6': 'Ds6.mp3', 'F#6': 'Fs6.mp3',
-    A6: 'A6.mp3', C7: 'C7.mp3', 'D#7': 'Ds7.mp3', 'F#7': 'Fs7.mp3',
-    A7: 'A7.mp3', C8: 'C8.mp3',
-};
 
 // Lazy-loaded Tone.js module reference
 let Tone = null;
@@ -29,11 +17,12 @@ async function getTone() {
  * Hook for managing the audio engine using Tone.js with Salamander Grand Piano samples.
  * Supports sustain, sostenuto, and soft pedals.
  */
-export function useAudio() {
+export function useAudio(presetId = DEFAULT_PRESET) {
     const [loaded, setLoaded] = useState(false);
     const [loading, setLoading] = useState(false);
     const [volume, setVolumeState] = useState(0.8);
     const [muted, setMuted] = useState(false);
+    const [currentPresetId, setCurrentPresetId] = useState(presetId);
     const samplerRef = useRef(null);
     const volumeNodeRef = useRef(null);
     const toneRef = useRef(null);
@@ -54,9 +43,17 @@ export function useAudio() {
     // Soft pedal velocity multiplier
     const SOFT_VELOCITY_FACTOR = 0.55;
 
+    // Resolve current preset config
+    const preset = PIANO_PRESETS[currentPresetId] || PIANO_PRESETS[DEFAULT_PRESET];
+    const sampleMap = preset.sampleMapKey === 'flat' ? SAMPLE_MAP_FLAT : SAMPLE_MAP;
+
     // Initialize the sampler
     const initAudio = useCallback(async () => {
         if (samplerRef.current || loading) return;
+        if (!preset.loaded) {
+            console.warn(`[useAudio] Preset "${currentPresetId}" not loaded locally. Skipping init.`);
+            return;
+        }
 
         setLoading(true);
 
@@ -69,8 +66,8 @@ export function useAudio() {
             volumeNodeRef.current = vol;
 
             const sampler = new T.Sampler({
-                urls: SAMPLE_MAP,
-                baseUrl: SAMPLE_BASE_URL,
+                urls: sampleMap,
+                baseUrl: preset.baseUrl,
                 release: 1.5,
                 onload: () => {
                     setLoaded(true);
@@ -79,15 +76,47 @@ export function useAudio() {
                 onerror: (err) => {
                     console.error('Sampler load error:', err);
                     setLoading(false);
+                    setLoaded(true); // graceful: seguir funcionando aunque fallen algunos samples
                 },
             }).connect(vol);
 
             samplerRef.current = sampler;
+
+            // Timeout de seguridad: si los samples no cargan en 20s, liberar el bloqueo
+            setTimeout(() => {
+                if (!samplerRef.current) return;
+                setLoaded(true);
+                setLoading(false);
+            }, 20_000);
         } catch (err) {
             console.error('Audio init error:', err);
             setLoading(false);
         }
-    }, [loading, volume]);
+    }, [loading, volume, currentPresetId, preset.baseUrl, preset.loaded, sampleMap]);
+
+    // Switch preset at runtime
+    const switchPreset = useCallback((newPresetId) => {
+        const target = PIANO_PRESETS[newPresetId];
+        if (!target) {
+            console.warn(`[useAudio] Unknown preset: ${newPresetId}`);
+            return;
+        }
+        if (!target.loaded) {
+            console.log(`[useAudio] Preset "${newPresetId}" not available locally.`);
+            // Still update the ID so UI reflects selection; audio won't init until loaded
+            setCurrentPresetId(newPresetId);
+            setLoaded(false);
+            return;
+        }
+        // Dispose old sampler and reload
+        if (samplerRef.current) {
+            samplerRef.current.dispose();
+            samplerRef.current = null;
+        }
+        setLoaded(false);
+        setCurrentPresetId(newPresetId);
+        // initAudio will be triggered by effect or caller
+    }, []);
 
     // Play a note
     const noteOn = useCallback((midiNote, velocity = 0.8) => {
@@ -252,6 +281,7 @@ export function useAudio() {
         loading,
         volume,
         muted,
+        currentPresetId,
         initAudio,
         noteOn,
         noteOff,
@@ -261,5 +291,6 @@ export function useAudio() {
         setSustain,
         setSostenuto,
         setSoft,
+        switchPreset,
     };
 }

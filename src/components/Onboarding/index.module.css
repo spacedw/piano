@@ -1,0 +1,287 @@
+/* ============================================================
+   Onboarding — 4-step flow
+   ============================================================ */
+
+.shell {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 11, 0.92);
+    backdrop-filter: blur(16px);
+    z-index: 300;
+    display: grid;
+    place-items: center;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.card {
+    width: 720px;
+    max-width: 95vw;
+    background: rgba(22, 22, 30, 0.72);
+    backdrop-filter: blur(48px) saturate(180%);
+    -webkit-backdrop-filter: blur(48px) saturate(180%);
+    border: 1px solid var(--stroke, rgba(255,255,255,0.10));
+    border-radius: var(--r-xl, 20px);
+    overflow: hidden;
+    position: relative;
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-modal, 0 60px 120px -20px rgba(0,0,0,0.7));
+}
+
+.skipBtn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 2;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    border-radius: var(--r-sm, 6px);
+    color: var(--ink-3, #908C84);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: all 0.15s ease;
+}
+
+.skipBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink-1, #F4F1EA);
+}
+
+.layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 420px;
+}
+
+/* ── Left: text side ────────────────────────────── */
+.textSide {
+    padding: 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold-100, #E8D4A8);
+    margin-bottom: 12px;
+}
+
+.title {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 32px;
+    font-weight: 300;
+    line-height: 1.15;
+    margin: 0 0 16px;
+    color: var(--ink-1, #F4F1EA);
+    letter-spacing: -0.02em;
+}
+
+.desc {
+    font-size: 14px;
+    color: var(--ink-2, #C9C5BC);
+    line-height: 1.6;
+    margin: 0 0 32px;
+}
+
+/* ── Controls ───────────────────────────────────── */
+.controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.backBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-sm, 6px);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    color: var(--ink-2, #C9C5BC);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.backBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink-1);
+}
+
+.nextBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: rgba(201, 169, 110, 0.15);
+    border: 1px solid rgba(201, 169, 110, 0.30);
+    border-radius: var(--r-sm, 6px);
+    color: var(--gold, #C9A96E);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: all 0.15s ease;
+}
+
+.nextBtn:hover {
+    background: rgba(201, 169, 110, 0.25);
+}
+
+.dots {
+    display: flex;
+    gap: 4px;
+    margin-left: auto;
+}
+
+.dot {
+    width: 6px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    transition: all 200ms ease;
+}
+
+.dotActive {
+    width: 18px;
+    background: var(--gold, #C9A96E);
+}
+
+/* ── Right: illustration side ───────────────────── */
+.illoSide {
+    background: linear-gradient(135deg, #15110A, #0A0A0E);
+    position: relative;
+    overflow: hidden;
+}
+
+.illoCenter {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+}
+
+.illoGlow {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(201,169,110,0.25), transparent 70%);
+}
+
+.illoSvg {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+}
+
+.illoCard {
+    aspect-ratio: 1;
+    background: linear-gradient(135deg, #1F1A12, #0E0C08);
+    border: 1px solid rgba(201, 169, 110, 0.18);
+    border-radius: 8px;
+    display: grid;
+    place-items: center;
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 30px;
+    color: var(--gold, #C9A96E);
+    font-weight: 200;
+}
+
+/* Play illustration */
+.illoPlay {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+}
+
+.illoGlowLine {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 60px;
+    height: 60px;
+    background: linear-gradient(180deg, transparent, rgba(201,169,110,0.06));
+}
+
+.illoHitLine {
+    position: absolute;
+    bottom: 60px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold, #C9A96E), transparent);
+    box-shadow: 0 0 20px var(--gold, #C9A96E);
+}
+
+.illoKeyboard {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    height: 50px;
+    background: linear-gradient(180deg, #FAF7F1, #ECE6D9);
+    border-radius: 4px;
+    display: flex;
+}
+
+.illoKey {
+    flex: 1;
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* ── Mobile ─────────────────────────────────────── */
+@media (max-width: 600px) {
+    .shell {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .card {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        max-height: 92dvh;
+        overflow-y: auto;
+    }
+
+    .layout {
+        grid-template-columns: 1fr;
+        min-height: unset;
+    }
+
+    /* Ilustración compacta en la parte superior */
+    .illoSide {
+        height: 140px;
+        order: -1;
+    }
+
+    .textSide {
+        padding: 28px 24px 24px;
+    }
+
+    .title {
+        font-size: 26px;
+    }
+
+    .desc {
+        font-size: 13px;
+        margin-bottom: 24px;
+    }
+
+    .skipBtn {
+        top: 12px;
+        right: 12px;
+    }
+}

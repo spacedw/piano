@@ -19,6 +19,10 @@
   "emptyState.loadMidi": "Load a MIDI file to begin",
   "emptyState.dragDrop": "Drag & drop a .mid file, click Open, or browse your Library",
 
+  "freePractice.title": "Free Play",
+  "freePractice.waiting": "Waiting for note...",
+  "freePractice.tip": "Turn on the microphone and play note by note",
+
   "controls.open": "Open",
   "controls.loadMidi": "Load MIDI file",
   "controls.play": "Play",
@@ -36,6 +40,15 @@
   "midi.noDevice": "No Device",
   "midi.disabled": "MIDI Disabled",
   "midi.requiresBrowser": "Requires Chrome or Edge on desktop",
+
+  "mic.active": "Melody Mode",
+  "mic.inactive": "Mic",
+  "mic.tooltip": "Detect notes via microphone — ideal for acoustic piano",
+  "mic.permissionDenied": "Microphone permission denied",
+  "mic.notFound": "No microphone found",
+  "mic.hint": "Play note by note in a quiet environment",
+  "mic.signalGood": "Clear signal",
+  "mic.signalWeak": "Weak signal",
 
   "library.title": "Song Library",
   "library.importMidi": "Import MIDI",
@@ -148,9 +161,9 @@
   "practice.waitModeHint": "Pauses until you play the correct note",
   "practice.waiting": "Waiting...",
   "practice.hands": "Hands",
-  "practice.handBoth": "🎹 Both",
-  "practice.handRight": "👉 Right",
-  "practice.handLeft": "👈 Left",
+  "practice.handBoth": "Both",
+  "practice.handRight": "Right",
+  "practice.handLeft": "Left",
   "practice.speed": "Speed",
   "practice.loop": "Loop",
   "practice.loopStart": "Start",
@@ -205,5 +218,15 @@
   "score.perfect": "Perfect",
   "score.great": "Great",
   "score.good": "Good",
-  "score.miss": "Miss"
+  "score.miss": "Miss",
+
+  "controls.record": "Record",
+
+  "practice.coach": "Coach",
+  "practice.loopClear": "Clear",
+  "practice.countIn": "Count-in",
+
+  "player.noSong": "No song loaded",
+  "player.midiConnected": "Connected",
+  "player.noMidi": "No MIDI"
 }

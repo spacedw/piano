@@ -37,6 +37,11 @@ export class ScoreEngine {
         this.streak = 0;
         this.maxStreak = 0;
         this.pendingNotes = new Map(); // midiNote → { expected note, startWait timestamp }
+        this.micMode = false;
+    }
+
+    setMicMode(enabled) {
+        this.micMode = enabled;
     }
 
     /**
@@ -82,7 +87,8 @@ export class ScoreEngine {
         const pitchScore = 100;
 
         // Timing score: based on how close to expected time
-        const timingScore = Math.max(0, 100 - (timeDiff / TIMING_TOLERANCE_MS) * 50);
+        const timingTolerance = this.micMode ? 350 : TIMING_TOLERANCE_MS;
+        const timingScore = Math.max(0, 100 - (timeDiff / timingTolerance) * 50);
 
         // Velocity score: how close to expected velocity
         const velDiff = Math.abs(velocity - expected.velocity);

@@ -1,20 +1,197 @@
-.waterfallContainer {
+/* ============================================================
+   Waterfall lane styles
+   ============================================================ */
+
+.waterfall {
+    position: relative;
+    height: 100%;
     width: 100%;
     overflow: hidden;
-    position: relative;
-    border-radius: 8px 8px 0 0;
+    background:
+        radial-gradient(ellipse 80% 60% at 50% 100%, rgba(201,169,110,0.06), transparent 70%),
+        linear-gradient(180deg, #07070A 0%, #0B0B10 60%, #0F0F15 100%);
 }
 
-.waterfallCanvas {
-    display: block;
-    width: 100%;
+/* Vertical reference grid */
+.wfGrid {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.wfGridLine {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: rgba(255,255,255,0.025);
+}
+.wfGridC {
+    background: rgba(201,169,110,0.06);
 }
 
+/* Horizontal beat lines */
+.wfBeats {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.wfBeatLine {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: rgba(255,255,255,0.025);
+}
+
+/* Notes container */
+.wfNotes {
+    position: absolute;
+    inset: 0;
+}
+
+.wfNote {
+    position: absolute;
+    border-radius: 4px 4px 1px 1px;
+    pointer-events: none;
+    transition: filter 80ms ease;
+}
+.wfNoteR {
+    background:
+        linear-gradient(180deg, var(--gold-50) 0%, var(--gold) 70%, var(--gold-600) 100%);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,0.4) inset,
+        0 -2px 8px -2px rgba(0,0,0,0.4) inset,
+        0 0 12px -2px var(--gold-glow);
+}
+.wfNoteL {
+    background:
+        linear-gradient(180deg, #C9D6E8 0%, #8FA5C2 70%, #5C7396 100%);
+    box-shadow:
+        0 1px 0 rgba(255,255,255,0.3) inset,
+        0 -2px 8px -2px rgba(0,0,0,0.4) inset,
+        0 0 10px -2px rgba(143, 165, 194, 0.3);
+}
+.wfNoteBlk {
+    filter: brightness(0.85);
+}
+.wfNoteNow {
+    filter: brightness(1.15) saturate(1.2);
+}
+.wfNoteNow::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    box-shadow: 0 0 24px 2px var(--gold-glow);
+    pointer-events: none;
+}
+
+.wfNoteGlow {
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 8px;
+    background: linear-gradient(180deg, transparent, var(--gold-100));
+    filter: blur(4px);
+}
+
+/* Strike line + glow at bottom */
+.wfStrike {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px;
+    pointer-events: none;
+    z-index: 3;
+}
+.wfStrikeLine {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+    box-shadow: 0 0 16px 2px var(--gold-glow);
+    opacity: 0.85;
+}
+.wfStrikeFade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(180deg, transparent, rgba(201,169,110,0.06) 60%, rgba(201,169,110,0.12));
+}
+
+/* Sparkles for correct hits */
+.wfSparks {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.wfSparkCluster {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+}
+.wfSpark {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    background: var(--gold-100);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--gold);
+    animation: spark 700ms var(--ease-out) forwards;
+}
+.wfSparkCore {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px;
+    background: radial-gradient(circle, var(--gold-50), transparent 70%);
+    border-radius: 50%;
+    animation: spark 500ms ease-out forwards;
+    --dx: 0;
+    --dy: 0;
+}
+
+/* FX overlay canvas (for NoteHitFX) */
 .fxCanvas {
     display: block;
     width: 100%;
     position: absolute;
     top: 0;
     left: 0;
+    pointer-events: none;
+}
+
+/* Waiting overlay */
+.wfWaiting {
+    position: absolute;
+    inset: 0;
+    background: rgba(201, 169, 110, 0.03);
+    pointer-events: none;
+}
+
+/* Loop overlay */
+.wfLoopRegion {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: rgba(201, 169, 110, 0.04);
+    pointer-events: none;
+}
+.wfLoopLine {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 1px;
+    border-top: 1px dashed rgba(201, 169, 110, 0.3);
     pointer-events: none;
 }

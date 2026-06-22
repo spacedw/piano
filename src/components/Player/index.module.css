@@ -1,0 +1,562 @@
+/* ============================================================
+   Player components styles
+   ============================================================ */
+
+/* ── Transport bar ──────────────────────────────────────────── */
+
+.transport {
+    height: 56px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    border-top: 1px solid var(--stroke-soft);
+    border-bottom: 1px solid var(--stroke-soft);
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 70%),
+        rgba(12,12,16,0.55);
+    backdrop-filter: blur(32px) saturate(160%);
+    -webkit-backdrop-filter: blur(32px) saturate(160%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset, 0 -8px 24px -8px rgba(0,0,0,0.5);
+    position: relative;
+}
+.transport::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 30%);
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.transportLeft {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.transportCenter {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-width: 0;
+}
+
+.transportRight {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.playBtn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, var(--gold-100) 0%, var(--gold) 100%);
+    color: #1A1408;
+    display: grid;
+    place-items: center;
+    box-shadow:
+        0 1px 0 rgba(255,255,255,0.4) inset,
+        0 8px 20px -4px rgba(201,169,110,0.4);
+    transition: transform 120ms;
+    border: 0;
+    cursor: pointer;
+}
+.playBtn:hover { transform: scale(1.04); }
+.playBtn:active { transform: scale(0.96); }
+
+.btnIcon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-md);
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all 160ms var(--ease-out);
+}
+.btnIcon:hover {
+    background: rgba(255,255,255,0.04);
+    color: var(--ink-1);
+}
+
+.recordingOn {
+    animation: pulse-rec 1.6s ease-in-out infinite;
+}
+
+.timeDisplay {
+    font-family: var(--font-mono);
+    font-feature-settings: "tnum";
+    font-size: 12px;
+    min-width: 38px;
+    text-align: right;
+}
+.timeDisplayCurrent {
+    color: var(--gold-100);
+}
+.timeDisplayTotal {
+    color: var(--ink-3);
+    text-align: left;
+}
+
+/* Scrubber */
+.scrubber {
+    flex: 1;
+    position: relative;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+.scrubTrack {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 999px;
+}
+.scrubLoop {
+    position: absolute;
+    height: 3px;
+    background: rgba(143,165,194,0.25);
+    border-radius: 999px;
+}
+.scrubFill {
+    position: absolute;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold-700), var(--gold));
+    border-radius: 999px;
+    box-shadow: 0 0 10px rgba(201,169,110,0.4);
+}
+.scrubThumb {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--gold-50);
+    border: 1px solid var(--gold-600);
+    transform: translateX(-50%);
+    box-shadow: 0 0 0 4px rgba(201,169,110,0.12);
+}
+
+/* Speed pills */
+.speedLabel {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+}
+.speedPills {
+    display: flex;
+    gap: 2px;
+    padding: 3px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.2));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--stroke-soft);
+    border-radius: var(--r-md);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+}
+.speedPill {
+    height: 24px;
+    padding: 0 8px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    border-radius: 5px;
+    color: var(--ink-3);
+    transition: all 120ms;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+.speedPill:hover { color: var(--ink-1); }
+.speedActive {
+    background: var(--gold);
+    color: #1A1408;
+    font-weight: 600;
+}
+
+/* ── TopBar ──────────────────────────────────────────────────── */
+
+.topBar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    height: 60px;
+    border-bottom: 1px solid var(--stroke-soft);
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 80%),
+        rgba(10,10,14,0.55);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+    z-index: 5;
+    flex-shrink: 0;
+}
+
+.nowPlaying {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    min-width: 0;
+}
+.nowPlayingCover {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--r-sm);
+    background: linear-gradient(135deg, #2A1F0E, #1A1408);
+    border: 1px solid rgba(201,169,110,0.2);
+    display: grid;
+    place-items: center;
+    color: var(--gold);
+    font-family: var(--font-display);
+    font-weight: 300;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+.nowPlayingInfo {
+    min-width: 0;
+}
+.nowPlayingTitle {
+    font-size: 14px;
+    color: var(--ink-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.nowPlayingArtist {
+    font-size: 11px;
+    color: var(--ink-3);
+}
+
+/* Status strip */
+.statusStrip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.statusChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 12px;
+    height: 30px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+    backdrop-filter: blur(16px) saturate(150%);
+    -webkit-backdrop-filter: blur(16px) saturate(150%);
+    border: 1px solid var(--stroke-soft);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.05) inset;
+    font-size: 12px;
+    color: var(--ink-2);
+    transition: all 160ms;
+    cursor: pointer;
+}
+.statusChip:hover {
+    border-color: var(--stroke);
+    background: rgba(255,255,255,0.06);
+}
+.statusOk { color: var(--ink-1); }
+
+.led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink-5);
+}
+.ledOk {
+    background: var(--ok);
+    box-shadow: 0 0 8px var(--ok), 0 0 0 2px rgba(143,180,138,0.15);
+}
+
+.pedalStack {
+    display: flex;
+    gap: 2px;
+    padding: 4px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--stroke-soft);
+    border-radius: var(--r-sm);
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset;
+}
+.pedalDot {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.04em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--ink-4);
+    transition: all 120ms;
+}
+.pedalOn {
+    background: var(--gold);
+    color: #1A1408;
+}
+
+.recBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(194,138,138,0.10);
+    border: 1px solid rgba(194,138,138,0.3);
+    color: #D9B4B4;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+}
+.recPulse {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #D9B4B4;
+    animation: pulse-rec 1.6s ease-in-out infinite;
+}
+
+.practiceFab {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border-radius: var(--r-md);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--stroke-soft);
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all 160ms var(--ease-out);
+}
+.practiceFab:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: var(--stroke);
+    color: var(--ink-1);
+}
+.practiceFabActive {
+    background: rgba(201,169,110,0.08);
+    border-color: rgba(201,169,110,0.22);
+    color: var(--gold-100);
+}
+
+/* ── Practice Panel ─────────────────────────────────────────── */
+
+.practicePanel {
+    position: fixed;
+    top: 60px;
+    right: 0;
+    bottom: 216px;
+    width: 320px;
+    background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01) 60%),
+        rgba(14,14,20,0.55);
+    backdrop-filter: blur(40px) saturate(170%);
+    -webkit-backdrop-filter: blur(40px) saturate(170%);
+    border-left: 1px solid var(--stroke);
+    box-shadow:
+        1px 0 0 rgba(255,255,255,0.05) inset,
+        -24px 0 60px -12px rgba(0,0,0,0.55);
+    transform: translateX(100%);
+    transition: transform 360ms var(--ease-out);
+    z-index: 6;
+    overflow-y: auto;
+}
+.practicePanelOpen {
+    transform: translateX(0);
+}
+
+.practiceHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--stroke-faint);
+}
+
+.practiceSection {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--stroke-faint);
+}
+.practiceRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.handToggle {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 3px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--stroke-faint);
+    border-radius: var(--r-md);
+}
+.handBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 32px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: var(--ink-3);
+    transition: all 140ms;
+    background: transparent;
+    border: 0;
+    cursor: pointer;
+}
+.handBtn:hover { color: var(--ink-1); }
+.handActive {
+    background: rgba(201,169,110,0.12);
+    color: var(--gold-100);
+    box-shadow: 0 0 0 1px rgba(201,169,110,0.25) inset;
+}
+
+.loopControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+.loopBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    padding: 0 10px;
+    font-size: 12px;
+    border-radius: var(--r-sm);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--stroke-soft);
+    color: var(--ink-2);
+    cursor: pointer;
+    transition: all 160ms var(--ease-out);
+    font-family: var(--font-mono);
+}
+.loopBtn:hover {
+    background: rgba(255,255,255,0.07);
+    border-color: var(--stroke);
+}
+.loopBtnGhost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--ink-3);
+}
+.loopBtnGhost:hover {
+    background: rgba(255,255,255,0.04);
+    color: var(--ink-1);
+}
+
+.metroTick {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ink-5);
+}
+.metroActive {
+    background: var(--gold);
+    animation: beat-pulse 0.6s ease-in-out infinite;
+}
+
+/* Count-in selector */
+.countInToggle {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    padding: 3px;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--stroke-faint);
+    border-radius: var(--r-md);
+}
+
+/* ── ScoreFloat ──────────────────────────────────────────────── */
+
+.scoreFloatContainer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 15;
+}
+.scoreFloatItem {
+    position: absolute;
+    transform: translate(-50%, 0);
+    animation: float-up 1100ms var(--ease-out) forwards;
+    font-family: var(--font-display);
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.scoreFloatPerfect {
+    font-size: 32px;
+    color: var(--gold-50);
+    text-shadow: 0 0 24px var(--gold);
+}
+.scoreFloatGreat {
+    font-size: 24px;
+    color: var(--gold-100);
+    text-shadow: 0 0 12px rgba(201,169,110,0.4);
+}
+.scoreFloatGood {
+    font-size: 24px;
+    color: var(--ink-2);
+    text-shadow: 0 0 12px rgba(201,169,110,0.4);
+}
+.scoreFloatMiss {
+    font-size: 24px;
+    color: #D9B4B4;
+    text-shadow: none;
+}
+.scoreFloatStar {
+    color: var(--gold);
+}
+
+/* Spark particles */
+.sparkCluster {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    pointer-events: none;
+}
+.sparkParticle {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 4px;
+    height: 4px;
+    background: var(--gold-100);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--gold);
+    animation: spark 700ms var(--ease-out) forwards;
+}
+.sparkCore {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 24px;
+    height: 24px;
+    margin: -12px;
+    background: radial-gradient(circle, var(--gold-50), transparent 70%);
+    border-radius: 50%;
+    animation: spark 500ms ease-out forwards;
+    --dx: 0;
+    --dy: 0;
+}

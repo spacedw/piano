@@ -19,6 +19,10 @@
   "emptyState.loadMidi": "Carga un archivo MIDI para comenzar",
   "emptyState.dragDrop": "Arrastra un archivo .mid, haz clic en Abrir o explora tu Biblioteca",
 
+  "freePractice.title": "Toca libremente",
+  "freePractice.waiting": "Esperando nota...",
+  "freePractice.tip": "Activa el micrófono y toca nota a nota",
+
   "controls.open": "Abrir",
   "controls.loadMidi": "Cargar archivo MIDI",
   "controls.play": "Reproducir",
@@ -36,6 +40,15 @@
   "midi.noDevice": "Sin Dispositivo",
   "midi.disabled": "MIDI Desactivado",
   "midi.requiresBrowser": "Requiere Chrome o Edge en escritorio",
+
+  "mic.active": "Modo Melodía",
+  "mic.inactive": "Mic",
+  "mic.tooltip": "Detectar notas por micrófono — ideal para piano acústico",
+  "mic.permissionDenied": "Permiso de micrófono denegado",
+  "mic.notFound": "No se encontró micrófono",
+  "mic.hint": "Toca nota a nota en un ambiente silencioso",
+  "mic.signalGood": "Señal clara",
+  "mic.signalWeak": "Señal débil",
 
   "library.title": "Biblioteca",
   "library.importMidi": "Importar MIDI",
@@ -148,9 +161,9 @@
   "practice.waitModeHint": "Pausa hasta que toques la nota correcta",
   "practice.waiting": "Esperando...",
   "practice.hands": "Manos",
-  "practice.handBoth": "🎹 Ambas",
-  "practice.handRight": "👉 Derecha",
-  "practice.handLeft": "👈 Izquierda",
+  "practice.handBoth": "Ambas",
+  "practice.handRight": "Derecha",
+  "practice.handLeft": "Izquierda",
   "practice.speed": "Velocidad",
   "practice.loop": "Bucle",
   "practice.loopStart": "Inicio",
@@ -205,5 +218,15 @@
   "score.perfect": "¡Perfecto!",
   "score.great": "¡Genial!",
   "score.good": "Bien",
-  "score.miss": "Fallo"
+  "score.miss": "Fallo",
+
+  "controls.record": "Grabar",
+
+  "practice.coach": "Profesor",
+  "practice.loopClear": "Limpiar",
+  "practice.countIn": "Compás de entrada",
+
+  "player.noSong": "Sin canción",
+  "player.midiConnected": "Conectado",
+  "player.noMidi": "Sin MIDI"
 }

@@ -1,0 +1,276 @@
+/* ============================================================
+   PianoApp — Design System
+   ============================================================ */
+
+:root {
+  /* Surfaces */
+  --bg-0: #0A0A0B;
+  --bg-1: #0E0E11;
+  --bg-2: #131318;
+  --bg-3: #17171D;
+  --bg-4: #1E1E26;
+  --bg-glass: rgba(22, 22, 28, 0.62);
+  --bg-glass-strong: rgba(28, 28, 36, 0.78);
+
+  /* Hairlines & strokes */
+  --stroke-faint: rgba(255, 255, 255, 0.04);
+  --stroke-soft: rgba(255, 255, 255, 0.07);
+  --stroke: rgba(255, 255, 255, 0.10);
+  --stroke-strong: rgba(255, 255, 255, 0.14);
+
+  /* Inks */
+  --ink-1: #F4F1EA;
+  --ink-2: #C9C5BC;
+  --ink-3: #908C84;
+  --ink-4: #5E5B55;
+  --ink-5: #3A3833;
+
+  /* Gold scale */
+  --gold-50: #F6EAD0;
+  --gold-100: #E8D4A8;
+  --gold-200: #D7BC85;
+  --gold: #C9A96E;
+  --gold-600: #A88A56;
+  --gold-700: #826A40;
+  --gold-800: #5C4A2C;
+  --gold-glow: rgba(201, 169, 110, 0.35);
+
+  /* Semantic */
+  --ok: #8FB48A;       /* moss */
+  --warn: #D6A86A;
+  --rose: #C28A8A;     /* mute coral, never blood red */
+  --info: #8FA5C2;
+
+  /* Type */
+  --font-display: 'Outfit', 'Helvetica Neue', sans-serif;
+  --font-ui: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+  /* Shadows */
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -16px rgba(0,0,0,0.5);
+  --shadow-modal: 0 1px 0 rgba(255,255,255,0.05) inset, 0 60px 120px -20px rgba(0,0,0,0.7);
+  --shadow-gold: 0 0 0 1px rgba(201,169,110,0.18), 0 0 32px -4px rgba(201,169,110,0.28);
+
+  /* Radii */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-2xl: 28px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+/* ---------- Reset ---------- */
+* { box-sizing: border-box; }
+html, body, #root {
+  height: 100dvh;
+  margin: 0;
+  background: var(--bg-0);
+  color: var(--ink-1);
+  font-family: var(--font-ui);
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow: hidden;
+}
+
+body {
+  /* Subtle warm vignette */
+  background:
+    radial-gradient(ellipse 1200px 800px at 50% 110%, rgba(201,169,110,0.06), transparent 60%),
+    radial-gradient(ellipse 800px 600px at 0% 0%, rgba(255,255,255,0.015), transparent 60%),
+    var(--bg-0);
+}
+
+button { font: inherit; color: inherit; background: none; border: none; cursor: pointer; padding: 0; }
+input, select, textarea { font: inherit; color: inherit; }
+a { color: inherit; text-decoration: none; }
+
+/* ---------- Scrollbar ---------- */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.06); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); background-clip: padding-box; border: 2px solid transparent; }
+
+/* ---------- Typography helpers ---------- */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+}
+.t-mono {
+  font-family: var(--font-mono);
+  font-feature-settings: "tnum";
+}
+.t-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.t-label {
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+}
+
+/* ---------- Glass surfaces ---------- */
+.glass {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.015) 40%, rgba(255,255,255,0) 100%),
+    rgba(18, 18, 24, 0.55);
+  backdrop-filter: blur(32px) saturate(160%);
+  -webkit-backdrop-filter: blur(32px) saturate(160%);
+  border: 1px solid var(--stroke-soft);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.07) inset,
+    0 0 0 1px rgba(255,255,255,0.02) inset,
+    0 24px 48px -16px rgba(0,0,0,0.55);
+  position: relative;
+}
+.glass::before {
+  content: '';
+  position: absolute; inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), transparent 30%);
+  pointer-events: none;
+  opacity: 0.6;
+}
+.glass-strong {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.015) 50%, rgba(255,255,255,0) 100%),
+    rgba(22, 22, 30, 0.72);
+  backdrop-filter: blur(48px) saturate(180%);
+  -webkit-backdrop-filter: blur(48px) saturate(180%);
+  border: 1px solid var(--stroke);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.10) inset,
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 60px 120px -20px rgba(0,0,0,0.75);
+}
+
+/* ---------- Chips ---------- */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--stroke-faint);
+}
+.chip-gold {
+  color: var(--gold-100);
+  background: rgba(201,169,110,0.08);
+  border-color: rgba(201,169,110,0.22);
+}
+
+/* ---------- Inputs ---------- */
+.input {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  background: rgba(0,0,0,0.30);
+  border: 1px solid var(--stroke-soft);
+  color: var(--ink-1);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  width: 100%;
+}
+.input:focus { border-color: var(--gold-700); box-shadow: 0 0 0 3px rgba(201,169,110,0.12); }
+.input::placeholder { color: var(--ink-4); }
+
+/* ---------- Cards ---------- */
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.025), rgba(255,255,255,0) 60%), var(--bg-2);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--r-lg);
+}
+
+/* ---------- Divider ---------- */
+.divider { height: 1px; background: var(--stroke-faint); border: 0; }
+.v-divider { width: 1px; align-self: stretch; background: var(--stroke-faint); }
+
+/* ---------- Shimmer / focus ring ---------- */
+.focus-ring:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- Skeleton ---------- */
+.skeleton {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.07) 50%, rgba(255,255,255,0.03) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+  border-radius: var(--r-sm);
+}
+
+/* ---------- Tooltip-ish label ---------- */
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--stroke-faint);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+}
+
+/* ---------- Utility classes ---------- */
+.fade-up { animation: fade-up 280ms var(--ease-out) both; }
+
+/* Allow Tweak panel above */
+.tweaks-host { z-index: 200 !important; }
+
+/* ---------- Animations ---------- */
+@keyframes float-up {
+  0% { transform: translate(-50%, 0) scale(0.9); opacity: 0; }
+  20% { transform: translate(-50%, -20px) scale(1.05); opacity: 1; }
+  80% { transform: translate(-50%, -40px) scale(1); opacity: 1; }
+  100% { transform: translate(-50%, -70px) scale(0.95); opacity: 0; }
+}
+@keyframes spark {
+  0% { transform: translate(0,0) scale(0); opacity: 1; }
+  100% { transform: translate(var(--dx,0), var(--dy,-30px)) scale(1); opacity: 0; }
+}
+@keyframes pulse-rec {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(194,138,138,0.5); }
+  50% { opacity: 0.7; box-shadow: 0 0 0 8px rgba(194,138,138,0); }
+}
+@keyframes beat-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.45; }
+  50% { transform: scale(1.4); opacity: 1; }
+}
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes fall {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(100vh); }
+}
+@keyframes glow-key {
+  0%, 100% { box-shadow: 0 0 12px 0 var(--gold-glow); }
+  50% { box-shadow: 0 0 28px 4px var(--gold-glow); }
+}

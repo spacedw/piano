@@ -1,101 +1,55 @@
-.progressOverlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(10, 10, 11, 0.85);
-    backdrop-filter: blur(8px);
-    z-index: 50;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    animation: fadeIn 0.2s ease;
-}
+/* ============================================================
+   ProgressDashboard — updated design
+   ============================================================ */
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.progressPanel {
-    width: 90%;
-    max-width: 700px;
-    max-height: 85vh;
-    background: #141416;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 16px;
+/* Page mode: fills parent container */
+.progressPage {
+    width: 100%;
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    box-shadow: 0 16px 64px rgba(0, 0, 0, 0.6);
 }
 
 .progressHeader {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.progressHeader h2 {
-    font-family: 'Outfit', sans-serif;
-    font-weight: 300;
-    font-size: 20px;
-    letter-spacing: 1px;
+    padding: 24px 32px 16px;
+    gap: 16px;
 }
 
 .closeBtn {
     background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    color: #8A8A8F;
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    color: var(--ink-3, #908C84);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm, 6px);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 12px;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
 }
 
-/* Tabs */
-.progressTabs {
-    display: flex;
-    padding: 0 24px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-}
-
-.progressTabs button {
-    padding: 12px 16px;
-    background: none;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: #555558;
-    font-size: 12px;
-    font-family: 'Inter', sans-serif;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    letter-spacing: 0.5px;
-}
-
-.progressTabs button:hover {
-    color: #8A8A8F;
-}
-
-.progressTabs button.active {
-    color: #C9A96E;
-    border-bottom-color: #C9A96E;
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink-1, #F4F1EA);
 }
 
 .progressContent {
     flex: 1;
     overflow-y: auto;
-    padding: 20px 24px;
+    padding: 20px 32px 32px;
 }
 
 .progressEmpty {
@@ -103,305 +57,396 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 40px;
-    color: #555558;
+    padding: 60px;
+    color: var(--ink-3, #908C84);
     font-size: 13px;
+}
+
+/* ── Overview layout ────────────────────────────── */
+.overviewLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ── KPI row ────────────────────────────────────── */
+.kpiRow {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+}
+
+.kpiCard {
+    background: var(--bg-2, #131318);
+    border: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+    border-radius: var(--r-lg, 14px);
+    padding: 20px;
+    box-shadow: var(--shadow-card, 0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px -16px rgba(0,0,0,0.5));
+}
+
+.kpiHead {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.kpiIcon {
+    color: var(--gold-100, #E8D4A8);
+}
+
+.eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3, #908C84);
+}
+
+.kpiValRow {
+    display: flex;
+    align-items: baseline;
     gap: 6px;
 }
 
-.progressEmpty.small {
-    padding: 16px;
+.kpiVal {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 32px;
+    font-weight: 200;
+    letter-spacing: -0.02em;
+    color: var(--ink-1, #F4F1EA);
+}
+
+.kpiUnit {
+    font-size: 12px;
+    color: var(--ink-3, #908C84);
+}
+
+.kpiDelta {
     font-size: 11px;
+    color: var(--ok, #8FB48A);
+    margin-top: 6px;
+    font-family: var(--font-mono);
 }
 
-/* Stat cards */
-.statCards {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
+/* ── Cards ──────────────────────────────────────── */
+.card {
+    background: var(--bg-2, #131318);
+    border: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+    border-radius: var(--r-lg, 14px);
+    padding: 20px;
+    box-shadow: var(--shadow-card);
 }
 
-.statCard {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 10px;
-    padding: 14px;
+.cardHeader {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    text-align: center;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
 }
 
-.statCard.accent {
-    border-color: rgba(201, 169, 110, 0.15);
-    background: rgba(201, 169, 110, 0.04);
-}
-
-.statValue {
-    font-family: 'Outfit', sans-serif;
-    font-size: 22px;
-    font-weight: 400;
-    color: #F5F5F5;
-}
-
-.statCard.accent .statValue {
-    color: #C9A96E;
-}
-
-.statLabel {
-    font-size: 10px;
-    color: #555558;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* Sections */
-.statSection {
-    margin-bottom: 20px;
-}
-
-.statSection h3 {
-    font-family: 'Outfit', sans-serif;
+.cardTitle {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 18px;
     font-weight: 300;
-    font-size: 13px;
-    color: #8A8A8F;
-    margin-bottom: 10px;
-    letter-spacing: 0.5px;
+    color: var(--ink-1, #F4F1EA);
+    letter-spacing: -0.02em;
+    margin-top: 4px;
 }
 
-.statRow {
-    display: flex;
-    gap: 12px;
+/* ── Mid row (heatmap + chart) ──────────────────── */
+.midRow {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 16px;
 }
 
-.statMini {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 8px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.miniLabel {
-    font-size: 10px;
-    color: #555558;
-}
-
-.miniValue {
-    font-size: 16px;
-    font-family: 'JetBrains Mono', monospace;
-    color: #F5F5F5;
-}
-
-.miniValue.gold {
-    color: #C9A96E;
-}
-
-/* Heatmap */
+/* ── Heatmap ────────────────────────────────────── */
 .heatmap {
     display: grid;
-    grid-template-columns: repeat(13, 1fr);
+    grid-template-columns: repeat(15, 1fr);
     gap: 3px;
 }
 
-.heatmapCell {
+.hmCell {
     aspect-ratio: 1;
     border-radius: 2px;
     background: rgba(255, 255, 255, 0.03);
 }
 
-.heatmapCell.level1 {
-    background: rgba(201, 169, 110, 0.15);
-}
-
-.heatmapCell.level2 {
-    background: rgba(201, 169, 110, 0.3);
-}
-
-.heatmapCell.level3 {
-    background: rgba(201, 169, 110, 0.5);
-}
-
-.heatmapCell.level4 {
-    background: rgba(201, 169, 110, 0.75);
-}
+.hm1 { background: rgba(201, 169, 110, 0.15); }
+.hm2 { background: rgba(201, 169, 110, 0.30); }
+.hm3 { background: rgba(201, 169, 110, 0.50); }
+.hm4 { background: rgba(201, 169, 110, 0.75); }
 
 .heatmapLegend {
     display: flex;
     align-items: center;
     gap: 4px;
-    justify-content: flex-end;
-    margin-top: 6px;
-    font-size: 9px;
-    color: #555558;
-}
-
-/* Session list */
-.sessionList {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.sessionItem {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 6px;
-}
-
-.sessionInfo {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.sessionSong {
-    font-size: 12px;
-    color: #F5F5F5;
-}
-
-.sessionDate {
     font-size: 10px;
-    color: #555558;
+    color: var(--ink-3, #908C84);
 }
 
-.sessionStats {
-    display: flex;
-    gap: 12px;
-    align-items: center;
+/* ── Score chart ────────────────────────────────── */
+.chart {
+    display: block;
 }
 
-.sessionScore {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: #4ADE80;
-}
-
-.sessionDuration {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: #8A8A8F;
-}
-
-/* Recordings */
-.recordingList {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.recordingItem {
-    display: flex;
-    align-items: center;
-    padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    border-radius: 8px;
+/* ── Bottom row (scores + sessions) ─────────────── */
+.bottomRow {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr;
     gap: 16px;
 }
 
-.recordingInfo {
-    flex: 1;
+/* ── Top scores ─────────────────────────────────── */
+.topScoreList {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 10px;
 }
 
-.recordingName {
-    font-size: 12px;
-    color: #F5F5F5;
-    cursor: pointer;
+.topScoreItem {
     display: flex;
     align-items: center;
-    gap: 5px;
-    transition: color 0.15s ease;
+    gap: 12px;
+    padding: 8px 0;
 }
 
-.recordingName:hover {
-    color: #C9A96E;
+.topRank {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-weight: 200;
+    font-size: 24px;
+    color: var(--ink-4, #5E5B55);
+    min-width: 24px;
 }
 
-.editHint {
-    font-size: 10px;
-    color: #555558;
-    opacity: 0;
-    transition: opacity 0.15s ease;
+.topRankGold {
+    color: var(--gold, #C9A96E);
 }
 
-.recordingName:hover .editHint {
-    opacity: 1;
+.topScoreInfo {
+    flex: 1;
+    min-width: 0;
 }
 
-.editRecInput {
-    font-size: 12px;
-    color: #F5F5F5;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(201, 169, 110, 0.4);
-    border-radius: 4px;
-    padding: 3px 6px;
-    font-family: 'Inter', sans-serif;
-    outline: none;
-    width: 100%;
-    max-width: 250px;
+.topScoreSong {
+    font-size: 13px;
+    color: var(--ink-1, #F4F1EA);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.editRecInput:focus {
-    border-color: rgba(201, 169, 110, 0.7);
-    box-shadow: 0 0 6px rgba(201, 169, 110, 0.15);
-}
-
-.recordingDate {
-    font-size: 10px;
-    color: #555558;
-}
-
-.recordingMeta {
-    display: flex;
-    gap: 8px;
-    font-size: 10px;
-    color: #8A8A8F;
-    font-family: 'JetBrains Mono', monospace;
-}
-
-.recordingActions {
-    display: flex;
-    gap: 4px;
-}
-
-.recPlayBtn,
-.recSaveBtn,
-.recDeleteBtn {
-    padding: 4px 8px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 4px;
-    cursor: pointer;
+.topScoreArtist {
     font-size: 11px;
+    color: var(--ink-3, #908C84);
+}
+
+.topScoreVal {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--gold-100, #E8D4A8);
+}
+
+/* ── Sessions table ─────────────────────────────── */
+.sessionsTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.sessionsTable thead th {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3, #908C84);
+    font-weight: 400;
+    padding: 8px 0;
+    text-align: left;
+    border-bottom: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+}
+
+.sessionsTable tbody td {
+    padding: 12px 0;
+    font-size: 12px;
+}
+
+.sessMono {
+    font-family: var(--font-mono);
+    color: var(--ink-3, #908C84);
+}
+
+.sessSong {
+    color: var(--ink-1, #F4F1EA);
+}
+
+.sessScore {
+    font-family: var(--font-mono);
+    color: var(--gold-100, #E8D4A8);
+}
+
+/* ── Empty state ────────────────────────────────── */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 80px;
+    text-align: center;
+}
+
+.emptyIcon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    margin-bottom: 20px;
+    background: linear-gradient(180deg, rgba(201,169,110,0.06), transparent);
+    border: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+    color: var(--gold-100, #E8D4A8);
+}
+
+.emptyTitle {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 20px;
+    font-weight: 300;
+    color: var(--ink-1, #F4F1EA);
+    margin-bottom: 8px;
+}
+
+.emptyDesc {
+    font-size: 13px;
+    color: var(--ink-3, #908C84);
+    max-width: 360px;
+    line-height: 1.5;
+}
+
+/* ── Recordings ─────────────────────────────────── */
+.recordingList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.recordingItem {
+    background: var(--bg-2, #131318);
+    border: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+    border-radius: var(--r-lg, 14px);
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 40px 1fr auto auto;
+    align-items: center;
+    gap: 16px;
+    box-shadow: var(--shadow-card);
+}
+
+.recPlayBtn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(201, 169, 110, 0.08);
+    border: 1px solid rgba(201, 169, 110, 0.18);
+    color: var(--gold, #C9A96E);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .recPlayBtn:hover {
     background: rgba(201, 169, 110, 0.15);
-    border-color: rgba(201, 169, 110, 0.3);
+    border-color: rgba(201, 169, 110, 0.35);
 }
 
-.recSaveBtn:hover {
-    background: rgba(96, 165, 250, 0.12);
-    border-color: rgba(96, 165, 250, 0.3);
+.recInfo {
+    min-width: 0;
 }
 
-.recDeleteBtn:hover {
-    background: rgba(248, 113, 113, 0.1);
-    border-color: rgba(248, 113, 113, 0.2);
+.recName {
+    font-size: 13px;
+    color: var(--ink-1, #F4F1EA);
+    margin-bottom: 2px;
+    cursor: pointer;
 }
 
-.emptyHint {
+.recName:hover {
+    color: var(--gold, #C9A96E);
+}
+
+.recMeta {
+    display: flex;
+    gap: 12px;
     font-size: 11px;
-    color: #555558;
+    color: var(--ink-3, #908C84);
+    font-family: var(--font-mono);
+}
+
+.recSong {
+    color: var(--ink-2, #C9C5BC);
+}
+
+.recScoreCol {
+    text-align: right;
+}
+
+.recScoreVal {
+    font-family: var(--font-mono);
+    font-size: 16px;
+    color: var(--gold-100, #E8D4A8);
+}
+
+.recAccuracy {
+    font-size: 10px;
+    color: var(--ink-4, #5E5B55);
+}
+
+.recActions {
+    display: flex;
+    gap: 4px;
+}
+
+.recActionBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm, 6px);
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    color: var(--ink-3, #908C84);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.recActionBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink-1, #F4F1EA);
+}
+
+.recActionDanger:hover {
+    background: rgba(194, 138, 138, 0.12);
+    color: var(--rose, #C28A8A);
+}
+
+.editRecInput {
+    font-size: 12px;
+    color: var(--ink-1, #F4F1EA);
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(201, 169, 110, 0.4);
+    border-radius: var(--r-xs, 4px);
+    padding: 4px 8px;
+    font-family: var(--font-ui);
+    outline: none;
+    width: 100%;
+    max-width: 280px;
+}
+
+.editRecInput:focus {
+    border-color: var(--gold, #C9A96E);
+    box-shadow: 0 0 6px rgba(201, 169, 110, 0.15);
 }

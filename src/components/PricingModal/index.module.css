@@ -1,0 +1,230 @@
+/* ============================================================
+   PricingModal
+   ============================================================ */
+
+.head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+}
+
+.eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3, #908C84);
+    margin-bottom: 4px;
+}
+
+.title {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 24px;
+    font-weight: 300;
+    margin: 0;
+    color: var(--ink-1, #F4F1EA);
+    letter-spacing: -0.02em;
+}
+
+.closeBtn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    color: var(--ink-3, #908C84);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm, 6px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink-1);
+}
+
+.body {
+    padding: 24px 28px 28px;
+}
+
+/* ── Billing toggle ─────────────────────────────── */
+.billingToggle {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.pillGroup {
+    display: flex;
+    gap: 0;
+    border-radius: var(--r-sm, 6px);
+    overflow: hidden;
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+}
+
+.pill {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    border-right: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+    color: var(--ink-3, #908C84);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: all 0.15s ease;
+}
+
+.pill:last-child { border-right: none; }
+
+.pillActive {
+    background: rgba(201, 169, 110, 0.12);
+    color: var(--gold, #C9A96E);
+}
+
+.saveBadge {
+    font-size: 9px;
+    color: var(--gold, #C9A96E);
+    margin-left: 4px;
+}
+
+/* ── Tier grid ──────────────────────────────────── */
+.tierGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.tierCard {
+    background: var(--bg-2, #131318);
+    border: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+    border-radius: var(--r-lg, 14px);
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+}
+
+.tierCardPro {
+    background: rgba(201, 169, 110, 0.04);
+    border-color: rgba(201, 169, 110, 0.22);
+    box-shadow: 0 0 0 1px rgba(201, 169, 110, 0.08);
+}
+
+.tierPrice {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 36px;
+    font-weight: 200;
+    color: var(--ink-1, #F4F1EA);
+    margin-top: 16px;
+    margin-bottom: 4px;
+}
+
+.tierPeriod {
+    font-size: 14px;
+    color: var(--ink-3, #908C84);
+    font-weight: 400;
+}
+
+.tierSub {
+    font-size: 12px;
+    color: var(--ink-3, #908C84);
+    margin-bottom: 24px;
+}
+
+.tierSubGold {
+    font-size: 12px;
+    color: var(--gold-100, #E8D4A8);
+    margin-bottom: 24px;
+}
+
+.tierBtn {
+    width: 100%;
+    padding: 10px;
+    border-radius: var(--r-sm, 6px);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink-2, #C9C5BC);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    margin-bottom: 24px;
+    transition: all 0.15s;
+}
+
+.tierBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.tierBtnGold {
+    width: 100%;
+    padding: 10px;
+    border-radius: var(--r-sm, 6px);
+    border: 1px solid rgba(201, 169, 110, 0.35);
+    background: rgba(201, 169, 110, 0.15);
+    color: var(--gold, #C9A96E);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    margin-bottom: 24px;
+    transition: all 0.15s;
+}
+
+.tierBtnGold:hover {
+    background: rgba(201, 169, 110, 0.25);
+}
+
+/* ── Feature list ───────────────────────────────── */
+.featureList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.featureItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--ink-2, #C9C5BC);
+}
+
+.featureDisabled {
+    color: var(--ink-4, #5E5B55);
+}
+
+.featureCheck {
+    width: 14px;
+    flex-shrink: 0;
+    color: var(--gold, #C9A96E);
+}
+
+.featureDisabled .featureCheck {
+    color: var(--ink-5, #3A3833);
+}
+
+.featureLabel {
+    flex: 1;
+}
+
+.featureExtra {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--gold-100, #E8D4A8);
+}
+
+/* ── Footer ─────────────────────────────────────── */
+.footer {
+    margin-top: 20px;
+    font-size: 11px;
+    color: var(--ink-4, #5E5B55);
+    text-align: center;
+}

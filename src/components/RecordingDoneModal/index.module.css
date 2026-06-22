@@ -1,0 +1,233 @@
+/* ============================================================
+   RecordingDoneModal
+   ============================================================ */
+
+.head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 24px 28px 16px;
+    border-bottom: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+}
+
+.recIndicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #D9B4B4;
+    margin-bottom: 4px;
+}
+
+.recDot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #D9B4B4;
+    box-shadow: 0 0 6px rgba(217, 180, 180, 0.4);
+}
+
+.title {
+    font-family: var(--font-display, 'Outfit', sans-serif);
+    font-size: 22px;
+    font-weight: 300;
+    margin: 0;
+    color: var(--ink-1, #F4F1EA);
+    letter-spacing: -0.02em;
+}
+
+.closeBtn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    color: var(--ink-3, #908C84);
+    width: 32px;
+    height: 32px;
+    border-radius: var(--r-sm, 6px);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.15s;
+}
+
+.closeBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink-1);
+}
+
+.body {
+    padding: 24px 28px 28px;
+}
+
+/* ── Waterfall preview ──────────────────────────── */
+.waterfall {
+    height: 80px;
+    border-radius: var(--r-md, 10px);
+    background: linear-gradient(180deg, #07070A, #0F0F15);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 4px 8px;
+    gap: 0;
+}
+
+.waterfallBar {
+    flex: 1;
+    background: rgba(201, 169, 110, 0.4);
+    border-radius: 2px;
+    margin: 0 1px;
+}
+
+.waterfallBarAccent {
+    background: var(--gold, #C9A96E);
+}
+
+.waterfallLine {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--gold, #C9A96E);
+    box-shadow: 0 0 12px var(--gold, #C9A96E);
+}
+
+/* ── Stats grid ─────────────────────────────────── */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.statCard {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 12px;
+    border-radius: var(--r-sm, 6px);
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid var(--stroke-faint, rgba(255,255,255,0.04));
+}
+
+.statHead {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--ink-3, #908C84);
+}
+
+.statLabel {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.statVal {
+    font-size: 16px;
+    color: var(--ink-1, #F4F1EA);
+    font-family: var(--font-mono);
+    font-weight: 400;
+}
+
+/* ── Name input ─────────────────────────────────── */
+.nameSection {
+    margin-bottom: 24px;
+}
+
+.nameLabel {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3, #908C84);
+    margin-bottom: 8px;
+}
+
+.nameInput {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    border-radius: var(--r-md, 10px);
+    color: var(--ink-1, #F4F1EA);
+    font-size: 13px;
+    font-family: var(--font-ui);
+    outline: none;
+}
+
+.nameInput:focus {
+    border-color: rgba(201, 169, 110, 0.3);
+}
+
+/* ── Action buttons ─────────────────────────────── */
+.actions {
+    display: flex;
+    gap: 8px;
+}
+
+.btnSave {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 16px;
+    background: rgba(201, 169, 110, 0.15);
+    border: 1px solid rgba(201, 169, 110, 0.30);
+    border-radius: var(--r-sm, 6px);
+    color: var(--gold, #C9A96E);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: all 0.15s ease;
+}
+
+.btnSave:hover {
+    background: rgba(201, 169, 110, 0.25);
+}
+
+.btnExport {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    border-radius: var(--r-sm, 6px);
+    color: var(--ink-2, #C9C5BC);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: all 0.15s ease;
+}
+
+.btnExport:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--ink-1);
+}
+
+.btnDiscard {
+    padding: 10px 14px;
+    background: transparent;
+    border: 1px solid var(--stroke-soft, rgba(255,255,255,0.07));
+    border-radius: var(--r-sm, 6px);
+    color: var(--ink-3, #908C84);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: var(--font-ui);
+    transition: all 0.15s ease;
+}
+
+.btnDiscard:hover {
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink-1);
+}
