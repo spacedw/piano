@@ -88,7 +88,7 @@ export default function PlayerPage() {
         micActive={micActive}
         onMicToggle={onMicToggle}
         micClarity={micClarity}
-        audioLoaded={audio?.loaded ?? true}
+        audioLoaded={!audio?.loading}
       />
 
       <div className="player-main">
